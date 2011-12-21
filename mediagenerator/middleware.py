@@ -28,6 +28,15 @@ class MediaMiddleware(object):
     def process_request(self, request):
         if not MEDIA_DEV_MODE:
             return
+        
+        #  We won't to refresh dev names for static requests.
+        #  So once static content generated it becomes cached
+        #  on the browser until changed
+        if request.path.startswith(DEV_MEDIA_URL) and 'HTTP_IF_MODIFIED_SINCE' in request.META:
+            response = HttpResponse()
+            response['Expires'] = http_date(time.time() + self.MAX_AGE)
+            response.status_code = 304
+            return response
 
         # We refresh the dev names only once for the whole request, so all
         # media_url() calls are cached.
@@ -43,6 +52,7 @@ class MediaMiddleware(object):
         except KeyError:
             raise Http404('The mediagenerator could not find the media file "%s"'
                           % filename)
+
         content, mimetype = backend.get_dev_output(filename)
         if not mimetype:
             mimetype = 'application/octet-stream'
@@ -59,4 +69,6 @@ class MediaMiddleware(object):
                 response.status_code == 200:
             patch_cache_control(response, public=True, max_age=self.MAX_AGE)
             response['Expires'] = http_date(time.time() + self.MAX_AGE)
+
+        response['Last-Modified'] = http_date(time.time())
         return response
