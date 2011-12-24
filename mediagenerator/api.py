@@ -29,6 +29,7 @@ def generate_media():
             if not os.path.exists(parent):
                 os.makedirs(parent)
 
+
             fp = open(path, 'wb')
             if isinstance(content, unicode):
                 content = content.encode('utf8')

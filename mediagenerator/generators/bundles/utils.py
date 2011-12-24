@@ -72,6 +72,9 @@ def _render_include_media(bundle, variation):
             tag = u'<link rel="stylesheet" type="text/css" href="%s" />'
     elif filetype == 'js':
         tag = u'<script type="text/javascript" src="%s"></script>'
+    elif filetype == 'sprite':
+        tag = u'<link rel="stylesheet" type="text/css" href="%s" />'
+        pass
     else:
         raise ValueError("""Don't know how to include file type "%s".""" % filetype)
 

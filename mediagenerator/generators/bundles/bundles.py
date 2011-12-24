@@ -44,7 +44,7 @@ class Bundles(Generator):
         variations = root._get_variations_with_input()
         variation = dict(zip(sorted(variations.keys()), combination))
         content = root.get_dev_output(path, variation)
-        mimetype = guess_type(bundle)[0]
+        mimetype = guess_type(bundle)[0] 
         return content, mimetype
 
     def get_dev_output_names(self):
