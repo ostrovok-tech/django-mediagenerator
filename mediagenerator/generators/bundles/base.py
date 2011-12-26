@@ -6,7 +6,6 @@ import os
 
 class Filter(object):
     takes_input = True
-    dev_mimetype = None
 
     def __init__(self, **kwargs):
         self.file_filter = FileFilter
@@ -55,13 +54,6 @@ class Filter(object):
         index = int(index)
         filter = self.get_input_filters()[index]
         return filter.get_dev_output(child, variation)
-
-    def get_dev_mimetype(self, name, variation):
-        """ Returnns content-type for the given file name """
-        index, child = name.split('/', 1)
-        index = int(index)
-        filter = self.get_input_filters()[index]
-        return filter.dev_mimetype
 
     def get_dev_output_names(self, variation):
         """

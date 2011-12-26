@@ -7,8 +7,10 @@ import os
 import shutil
 
 def generate_media():
-    if os.path.exists(GENERATED_MEDIA_DIR):
-        shutil.rmtree(GENERATED_MEDIA_DIR)
+
+    
+    #if os.path.exists(GENERATED_MEDIA_DIR):
+    #    shutil.rmtree(GENERATED_MEDIA_DIR)
 
     # This will make media_url() generate production URLs
     was_dev_mode = settings.MEDIA_DEV_MODE

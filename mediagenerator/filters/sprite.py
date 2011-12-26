@@ -8,6 +8,7 @@ import subprocess
 from django.utils.encoding import smart_str
 
 import mediagenerator.settings as settings
+from mediagenerator import utils
 from mediagenerator.generators.bundles.base import Filter, FileFilter
 from mediagenerator.utils import get_media_dirs
 from mediagenerator.settings import GENERATED_MEDIA_DIR
@@ -197,12 +198,10 @@ class SpriteBuilder(object):
                 version = hashlib.sha1(smart_str(sf.read())).hexdigest()
 
             self.tmpfiles.append(os.path.abspath(tmpfilename))
-            generated_filename = "%s/%s/%s-%s.png" % (
-                settings.PRODUCTION_MEDIA_URL.rstrip("/"),
-                "/".join(self.name.split("/")[:-1]), 
-                self.collection,
-                version
-            )
+            generated_key = "%s.png" % self.name
+            generated_value = "%s-%s.png" % (self.name, version)
+            generated_filename = "%s/%s" % (settings.PRODUCTION_MEDIA_URL.rstrip("/"), generated_value)
+            utils.NAMES[generated_key] = generated_value
             self._pub_generated_file[self.name] = generated_filename
             copy_to = os.path.join(GENERATED_MEDIA_DIR, *os.path.split(self.name)[:-1])
             copy_to = os.path.join(copy_to, "%s-%s.png" % (self.collection, version))
@@ -233,6 +232,7 @@ class CSSSprite(FileFilter):
     """ process @include sprite('/path/to/sprite') """
 
     rewrite_re = re.compile("@import sprite\(\s*[\"']([a-zA-Z/_\.\-]+?)['\"]?\s*\)\s*;?", re.UNICODE)
+    all_import_re = re.compile("@import allsprites\(\s*[\"']/*([a-zA-Z/_\.\-]+?)/*['\"]?\s*\)\s*;?", re.UNICODE)
     def __init__(self, **kwargs):
         super(CSSSprite, self).__init__(**kwargs)
         assert self.filetype == 'css', (
@@ -240,7 +240,13 @@ class CSSSprite(FileFilter):
             'The parent filter expects "%s".' % self.filetype)
 
     def filter_output(self, content, name, variation):
+        content = self.all_import_re.sub(self.make_imports_all, content)
         return self.rewrite_re.sub(self.make_imports, content)
+
+    def make_imports_all(self, match):
+        sprite_name = match.group(1)
+        css = SpriteBuilder(sprite_name)
+        return css.render()
 
     def make_imports(self, match):
         fname = match.group(1)
