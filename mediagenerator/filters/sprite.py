@@ -184,7 +184,12 @@ class SpriteBuilder(object):
         return_path = os.path.abspath(".")
         os.chdir(os.path.join(self.root))
         if self.debug:
-            cmd = ["identify", "*.png"]
+            # Use convert instead identify here becouse identify throws 
+            # errors on older ImageMagic version (no errors found on ubuntu 11.10).
+            # *cmd* called once per folder so there is shouldn't be lot of 
+            # performance lost in dev mode
+            cmd = ["convert", "-identify", "-strip", "-append", "*.png", "/dev/null" ]
+            print "cmd: ", cmd
         else:
             tmpfilename = "../%s.png" % self.collection
             cmd = ["convert", "-identify", "-strip", "-append", "*.png", tmpfilename ]
