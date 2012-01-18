@@ -137,8 +137,8 @@ class SpriteBuilder(object):
         css_entry += "%s; " % bg_style
         if bgimage:
             scaled_size = tuple([math.floor(x*scale) for x in bgimage.size])
-            css_entry += "background-size: %dpx %dpx; " % scaled_size
             css_entry += "-webkit-background-size: %dpx %dpx; " % scaled_size
+            css_entry += "background-size: %dpx %dpx; " % scaled_size
 
         if with_headers: css_entry += "}"
 
