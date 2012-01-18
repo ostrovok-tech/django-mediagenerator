@@ -51,6 +51,9 @@ def _render_include_media(bundle, variation):
     if filetype == 'css':
         media_types = variation.pop('media', None)
 
+    if filetype == 'js':
+        js_async = variation.pop('async', None)
+
     if MEDIA_DEV_MODE:
         root = _load_root_filter(bundle)
         variations = root._get_variations_with_input()
@@ -71,7 +74,11 @@ def _render_include_media(bundle, variation):
         else:
             tag = u'<link rel="stylesheet" type="text/css" href="%s" />'
     elif filetype == 'js':
-        tag = u'<script type="text/javascript" src="%s"></script>'
+        if js_async:
+            tag = u'<script type="text/javascript" async="%s" src="%%s"></script>' % js_async
+        else:
+            tag = u'<script type="text/javascript" src="%s"></script>'
+
     else:
         raise ValueError("""Don't know how to include file type "%s".""" % filetype)
 
