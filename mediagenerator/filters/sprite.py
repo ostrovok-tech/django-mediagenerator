@@ -1,6 +1,6 @@
 import hashlib
+import math
 import os
-import random
 import re
 import shutil
 import subprocess
@@ -99,8 +99,16 @@ class SpriteBuilder(object):
         self.tmpfiles = []
         self.collection = self.CSS_NAME_RE.sub("", os.path.split(self.name)[-1])
         self.generated_filename, self.images = self._generate_images()
+        
+        bg_w = 0
+        bg_h = 0
+        for i in self.images:
+            w, h = i.size
+            bg_w = max(bg_w, w)
+            bg_h += h
+        self.bgimg_info = ImgInfo(self.generated_filename, (bg_w, bg_h))
 
-    def handle_sprite(self, img, with_headers=True, force_bgimage=False):
+    def handle_sprite(self, img, with_headers=True, bgimage=False, scale=1.0):
 
         custom_class = ".spr-%s.%s" % (self.collection,
             self.CSS_NAME_RE.sub("", img.name)
@@ -113,11 +121,11 @@ class SpriteBuilder(object):
                 img.name
             )
         else:
-            if force_bgimage:
+            if bgimage:
                 bg_style = "background: transparent url('%s') no-repeat %dpx %dpx" % (
-                    force_bgimage,
-                    img.offset[0],
-                    img.offset[1]
+                    bgimage.name,
+                    math.floor(img.offset[0] * scale),
+                    math.floor(img.offset[1] * scale)
                 )
             else:
                 bg_style = "background-position: %dpx %dpx" % img.offset
@@ -125,8 +133,13 @@ class SpriteBuilder(object):
 
         css_entry = ""
         if with_headers: css_entry +=  "%s { " % custom_class
-        css_entry += "width: %dpx; height: %dpx; " % img.size
+        css_entry += "width: %dpx; height: %dpx; " % tuple([math.floor(x*scale) for x in img.size])
         css_entry += "%s; " % bg_style
+        if bgimage:
+            scaled_size = tuple([math.floor(x*scale) for x in bgimage.size])
+            css_entry += "background-size: %dpx %dpx; " % scaled_size
+            css_entry += "-webkit-background-size: %dpx %dpx; " % scaled_size
+
         if with_headers: css_entry += "}"
 
         return css_entry
@@ -149,7 +162,7 @@ class SpriteBuilder(object):
 
         return "\n".join(css)
 
-    def render_include(self, imgname):
+    def render_include(self, imgname, scale=1.0):
         """
         Render single css entry for css-based inclusion
         """
@@ -163,11 +176,12 @@ class SpriteBuilder(object):
             raise Exception("Sprite not found at '%s/%s'" % (self.root, imgname))
 
         if self.debug:
-            force_bgimage = "%s/%s" % (self.name, imgname)
+            bgimg_name = "%s/%s" % (self.name, imgname)
+            bgimg = ImgInfo(bgimg_name, img.size)
         else:
-            force_bgimage = self.generated_filename
+            bgimg = self.bgimg_info
 
-        return self.handle_sprite(img, with_headers=False, force_bgimage=force_bgimage)
+        return self.handle_sprite(img, with_headers=False, bgimage=bgimg, scale=scale)
 
     
     _dbg_images_cache   = {}
@@ -189,7 +203,6 @@ class SpriteBuilder(object):
             # *cmd* called once per folder so there is shouldn't be lot of 
             # performance lost in dev mode
             cmd = ["convert", "-identify", "-strip", "-append", "*.png", "/dev/null" ]
-            print "cmd: ", cmd
         else:
             tmpfilename = "../%s.png" % self.collection
             cmd = ["convert", "-identify", "-strip", "-append", "*.png", tmpfilename ]
@@ -236,7 +249,7 @@ class SpriteBuilder(object):
 class CSSSprite(FileFilter):
     """ process @include sprite('/path/to/sprite') """
 
-    rewrite_re = re.compile("@import sprite\(\s*[\"']([a-zA-Z/_\.\-]+?)['\"]?\s*\)\s*;?", re.UNICODE)
+    rewrite_re = re.compile("@import sprite\(\s*[\"']([0-9a-zA-Z/_\.\-]+?)['\"]?\s*(,\s*([\d\.]+)\s*)?\)\s*;?", re.UNICODE)
     all_import_re = re.compile("@import allsprites\(\s*[\"']/*([a-zA-Z/_\.\-]+?)/*['\"]?\s*\)\s*;?", re.UNICODE)
     def __init__(self, **kwargs):
         super(CSSSprite, self).__init__(**kwargs)
@@ -255,8 +268,9 @@ class CSSSprite(FileFilter):
 
     def make_imports(self, match):
         fname = match.group(1)
+        scale = match.group(3) and float(match.group(3)) or 1.0
         split_path = os.path.split(fname)
         sprite_file = split_path[-1]
         sprite_name = os.path.join(split_path[:-1])[0].lstrip('/') 
         css = SpriteBuilder(sprite_name.rstrip("/"))
-        return css.render_include(sprite_file)
+        return css.render_include(sprite_file, scale)
