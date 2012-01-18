@@ -189,7 +189,9 @@ class SpriteBuilder(object):
     _pub_generated_file = {}
     def _generate_images(self):
         if self.debug and self.name in self._dbg_images_cache:
-            return "", self._dbg_images_cache[self.name]
+            result, mtime = self._dbg_images_cache[self.name]
+            if os.path.getmtime(self.root) == mtime:
+                return "", result
 
         if not self.debug and self.name in self._pub_images_cache:
             return self._pub_generated_file[self.name], self._pub_images_cache[self.name]
@@ -236,7 +238,7 @@ class SpriteBuilder(object):
                 result.append(img)
 
         if self.debug:
-            self._dbg_images_cache[self.name] = result
+            self._dbg_images_cache[self.name] = result, os.path.getmtime(self.root)
         else:
             self._pub_generated_file[self.name] = result
 
