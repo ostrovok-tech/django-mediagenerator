@@ -259,7 +259,10 @@ class CSSSprite(FileFilter):
             'CSSSprite only supports CSS output. '
             'The parent filter expects "%s".' % self.filetype)
 
-    def filter_output(self, content, name, variation):
+    def get_dev_output(self, name, variation, content=None):
+        if not content:
+            content = super(CSSSprite, self).get_dev_output(name, variation)
+
         content = self.all_import_re.sub(self.make_imports_all, content)
         return self.rewrite_re.sub(self.make_imports, content)
 

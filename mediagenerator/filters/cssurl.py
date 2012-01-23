@@ -1,8 +1,7 @@
 from base64 import b64encode
 from django.conf import settings
 from mediagenerator.generators.bundles.base import Filter, FileFilter
-from mediagenerator.generators.bundles.settings import DEFAULT_CSS_PIPE
-from mediagenerator.utils import media_url, prepare_patterns, find_file, load_backend
+from mediagenerator.utils import media_url, prepare_patterns, find_file
 from mimetypes import guess_type
 import logging
 import os
@@ -92,24 +91,11 @@ class CSSURL(Filter):
 
 class CSSURLFileFilter(FileFilter):
     """Rewrites URLs relative to input file's location."""
-    def filter_output(self, content, name, variation):
+    def get_dev_output(self, name, variation, content=None):
+        if not content:
+            content = super(CSSURLFileFilter, self).get_dev_output(name, variation)
+
         if not REWRITE_CSS_URLS_RELATIVE_TO_SOURCE:
             return content
         rewriter = URLRewriter(posixpath.dirname(name))
         return rewriter.rewrite_urls(content)
-
-class CSSFilePipe(FileFilter):
-    
-    def __init__(self, **kwargs):
-        super(CSSFilePipe, self).__init__(**kwargs)
-        self.pipe = []
-        for filtername in DEFAULT_CSS_PIPE:
-            filter_class = load_backend(filtername)
-            self.pipe.append(filter_class(**kwargs))
-        
-    def get_dev_output(self, name, variation):
-        output = super(CSSFilePipe, self).get_dev_output(name, variation)
-        for filter in self.pipe:
-            output = filter.filter_output(output, name, variation)
-
-        return output
