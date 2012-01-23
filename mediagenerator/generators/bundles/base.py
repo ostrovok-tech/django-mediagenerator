@@ -1,6 +1,7 @@
 from .settings import DEFAULT_MEDIA_FILTERS
 from django.utils.encoding import smart_str
 from hashlib import sha1
+from mediagenerator.settings import MEDIA_DEV_MODE
 from mediagenerator.utils import load_backend, find_file, read_text_file
 import os
 
@@ -93,21 +94,39 @@ class Filter(object):
 
     def get_item(self, name):
         ext = os.path.splitext(name)[1].lstrip('.')
-        if ext in DEFAULT_MEDIA_FILTERS and self.should_use_default_filter(ext):
-            backend_class = load_backend(DEFAULT_MEDIA_FILTERS[ext])
-        else:
-            backend_class = self.file_filter
+        backend_classes = []
 
-        config = backend_class.from_default(name)
-        config.setdefault('filter',
-            '%s.%s' % (backend_class.__module__, backend_class.__name__))
-        config.setdefault('filetype', self.input_filetype)
-        config['bundle'] = self.bundle
-        # This is added to make really sure we don't instantiate the same
-        # filter in an endless loop. Normally, the child class should
-        # take care of this in should_use_default_filter().
-        config.setdefault('_from_default', ext)
-        return backend_class(**config)
+        if ext in DEFAULT_MEDIA_FILTERS and self.should_use_default_filter(ext):
+            ext_class = DEFAULT_MEDIA_FILTERS[ext]
+            if isinstance(ext_class, basestring):
+                backend_classes.append(load_backend(DEFAULT_MEDIA_FILTERS[ext]))
+            elif isinstance(ext_class, tuple):
+                backend_classes.append(FilterPipe)
+                for pipe_entry in ext_class:
+                    backend_classes.append(load_backend(pipe_entry))
+        else:
+            backend_classes.append(self.file_filter)
+
+
+        backends = []
+        for backend_class in backend_classes:
+            config = backend_class.from_default(name)
+            config.setdefault('filter',
+                '%s.%s' % (backend_class.__module__, backend_class.__name__))
+            config.setdefault('filetype', self.input_filetype)
+            config['bundle'] = self.bundle
+            # This is added to make really sure we don't instantiate the same
+            # filter in an endless loop. Normally, the child class should
+            # take care of this in should_use_default_filter().
+            config.setdefault('_from_default', ext)
+            backends.append(backend_class(**config))
+
+        backend = backends.pop(0)
+        for pipe_entry in backends:
+            backend.grow_pipe(pipe_entry)
+
+        return backend
+
 
     def _get_variations_with_input(self):
         """Utility function to get variations including input variations"""
@@ -153,7 +172,14 @@ class FileFilter(Filter):
     def get_dev_output_names(self, variation):
         path = self._get_path()
         mtime = os.path.getmtime(path)
-        if mtime != self.mtime:
+        # In dev mode, where a lot of requests
+        # we can reduce proc time of filters
+        # making hash = mtime of source file 
+        # instead of sha1(filtered_content)
+
+        if MEDIA_DEV_MODE:
+            hash = str(mtime)
+        elif mtime != self.mtime:
             output = self.get_dev_output(self.name, variation)
             hash = sha1(smart_str(output)).hexdigest()
         else:
@@ -186,3 +212,19 @@ class RawFileFilter(FileFilter):
         else:
             hash = self.hash
         yield self.name, hash
+
+class FilterPipe(FileFilter):
+    
+    def __init__(self, **kwargs):
+        super(FilterPipe, self).__init__(**kwargs)
+        self.pipe = []
+
+    def grow_pipe(self, pipe_entry):
+        self.pipe.append(pipe_entry)
+
+    def get_dev_output(self, name, variation):
+        output = super(FilterPipe, self).get_dev_output(name, variation)
+        for filter in self.pipe:
+            output = filter.get_dev_output(name, variation, content=output)
+
+        return output
