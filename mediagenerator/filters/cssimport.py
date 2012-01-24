@@ -47,7 +47,7 @@ class CssImport(FileFilter):
             fmod = os.path.getmtime(fname)
             if fmod > lm: lm = fmod
 
-        return fmod
+        return lm
         
     
 
