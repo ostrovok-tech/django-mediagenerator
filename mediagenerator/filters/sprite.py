@@ -251,7 +251,8 @@ class SpriteBuilder(object):
 class CSSSprite(FileFilter):
     """ process @include sprite('/path/to/sprite') """
 
-    rewrite_re = re.compile("@import sprite\(\s*[\"']([0-9a-zA-Z/_\.\-]+?)['\"]?\s*(,\s*([\d\.]+)\s*)?\)\s*;?", re.UNICODE)
+    rewrite_re = re.compile("@include sprite\(\s*[\"']([0-9a-zA-Z/_\.\-]+?)['\"]?\s*(,\s*([\d\.]+)\s*)?\)\s*;?", re.UNICODE)
+    rewrite_re_depricated = re.compile("@import sprite\(\s*[\"']([0-9a-zA-Z/_\.\-]+?)['\"]?\s*(,\s*([\d\.]+)\s*)?\)\s*;?", re.UNICODE)
     all_import_re = re.compile("@import allsprites\(\s*[\"']/*([a-zA-Z/_\.\-]+?)/*['\"]?\s*\)\s*;?", re.UNICODE)
     def __init__(self, **kwargs):
         super(CSSSprite, self).__init__(**kwargs)
@@ -264,12 +265,18 @@ class CSSSprite(FileFilter):
             content = super(CSSSprite, self).get_dev_output(name, variation)
 
         content = self.all_import_re.sub(self.make_imports_all, content)
+        content = self.rewrite_re_depricated.sub(self.warn_imports, content)
         return self.rewrite_re.sub(self.make_imports, content)
 
     def make_imports_all(self, match):
         sprite_name = match.group(1)
         css = SpriteBuilder(sprite_name)
         return css.render()
+
+    def warn_imports(self, match):
+        info = self.name, match.string.count('\n', 0, match.start())
+        print "[%s:%d] `@import sprite()` is depricated, use @include sprite instead." % info
+        return self.make_imports(match)
 
     def make_imports(self, match):
         fname = match.group(1)

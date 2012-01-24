@@ -169,14 +169,16 @@ class FileFilter(Filter):
             % (name, self.name))
         return read_text_file(self._get_path())
 
-    def get_dev_output_names(self, variation):
+    def get_last_modified(self):
         path = self._get_path()
-        mtime = os.path.getmtime(path)
+        return os.path.getmtime(path)
+
+    def get_dev_output_names(self, variation):
+        mtime = self.get_last_modified()
         # In dev mode, where a lot of requests
         # we can reduce proc time of filters
         # making hash = mtime of source file 
         # instead of sha1(filtered_content)
-
         if MEDIA_DEV_MODE:
             hash = str(mtime)
         elif mtime != self.mtime:
@@ -228,3 +230,12 @@ class FilterPipe(FileFilter):
             output = filter.get_dev_output(name, variation, content=output)
 
         return output
+
+    def get_last_modified(self):
+        lmod = 0
+        for entry in self.pipe:
+            entry_lm = entry.get_last_modified()
+            if entry_lm > lmod:
+                lmod = entry_lm
+        
+        return lmod
