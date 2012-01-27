@@ -1,18 +1,14 @@
 from . import settings, utils
 from .settings import (GENERATED_MEDIA_DIR, GENERATED_MEDIA_NAMES_FILE,
-                       MEDIA_GENERATORS)
-from .utils import load_backend
+                       GENERATED_MEDIA_BLOCKS_FILE, MEDIA_GENERATORS) 
+
+from .utils import load_backend, _get_dev_media_bundles_blocks
 from django.utils.http import urlquote
 import os
-import shutil
 
 def generate_media():
 
     
-    #if os.path.exists(GENERATED_MEDIA_DIR):
-    #    shutil.rmtree(GENERATED_MEDIA_DIR)
-
-    # This will make media_url() generate production URLs
     was_dev_mode = settings.MEDIA_DEV_MODE
     settings.MEDIA_DEV_MODE = False
 
@@ -46,3 +42,14 @@ def generate_media():
     fp = open(GENERATED_MEDIA_NAMES_FILE, 'w')
     fp.write('NAMES = %r' % utils.NAMES)
     fp.close()
+
+
+def prepare_media():
+
+    blocks_files, blocks_bundles = _get_dev_media_bundles_blocks()
+    with open(GENERATED_MEDIA_BLOCKS_FILE, "w") as sf:
+        sf.write("MEDIA_BLOCKS_FILES=" + repr(blocks_files) + "\n")
+        sf.write("MEDIA_BLOCKS_BUNDLES=" + repr(blocks_bundles) + "\n")
+
+    for name, b in blocks_bundles.items():
+        print name, b

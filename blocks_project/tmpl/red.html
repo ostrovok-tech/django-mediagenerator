@@ -1,0 +1,10 @@
+{% extends 'index.html' %}
+{% block content %}
+    <div class="red">
+    {% include 'red_label.html' %}    
+    {% block red_content %}
+        Some content on red background
+    {% endblock %}
+    </div>
+    {% include 'red_label.html' %}
+{% endblock %}

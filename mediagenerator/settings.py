@@ -6,18 +6,25 @@ import sys
 __main__ = sys.modules.get('__main__')
 
 _map_file_path = '_generated_media_names.py'
+_map_blocks_path = '_generated_media_blocks.py'
 _media_dir = '_generated_media'
 # __main__ is not guaranteed to have the __file__ attribute
 if hasattr(__main__, '__file__'):
     _root = os.path.dirname(__main__.__file__)
     _map_file_path = os.path.join(_root, _map_file_path)
     _media_dir = os.path.join(_root, _media_dir)
+
 GENERATED_MEDIA_DIR = os.path.abspath(
     getattr(settings, 'GENERATED_MEDIA_DIR', _media_dir))
 GENERATED_MEDIA_NAMES_MODULE = getattr(settings, 'GENERATED_MEDIA_NAMES_MODULE',
                                        '_generated_media_names')
 GENERATED_MEDIA_NAMES_FILE = os.path.abspath(
     getattr(settings, 'GENERATED_MEDIA_NAMES_FILE', _map_file_path))
+
+GENERATED_MEDIA_BLOCKS_MODULE = getattr(settings, 'GENERATED_MEDIA_BLOCKS_MODULE',
+                                       '_generated_media_blocks')
+GENERATED_MEDIA_BLOCKS_FILE = os.path.abspath(
+    getattr(settings, 'GENERATED_MEDIA_BLOCKS_FILE', _map_blocks_path))
 
 DEV_MEDIA_URL = getattr(settings, 'DEV_MEDIA_URL',
                         getattr(settings, 'STATIC_URL', settings.MEDIA_URL))

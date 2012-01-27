@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+{%load media%}
+<html>
+<head>
+    {% media_meta %}
+    {% block custom_meta %}
+    {% endblock %}
+</head>
+<body>
+    {{request.META.PATH_INFO}}
+    {% for label, target in menu %}
+        <div class="menu-item">
+            <b>[</b> <a href="{{target}}">{{label}}</a> <b>]</b>
+        </div>
+    {% endfor %}
+
+    {% include "delim.html" %}
+    
+    <div class="medium">
+    {% block content %}
+        <h4>
+            Default content of `<code>index.html</code>` and blocks inherited from it.
+        </h4>
+        <p>
+            `<code>index.html</code>` block provides menu for demo project,
+            css for menu and default layout (<code>static/css/index.html</code>) and includes 
+            blocks provids default js functionality (jQuery in this example).
+        </p>
+        
+        <p>
+            Each block contain js and css file with same name as block except of `<code>.html</code>`
+            extension.
+        </p>
+
+        <p>
+            So if we include, extend or render `<code>index.html</code>` - mediagenerator
+            will try to found `<code>index.js</code>` and `<code>index.css</code>`.
+        </p>
+
+        <p>
+            While including js files, mediagenerator tries to determine their dependencies,
+            resolving `<code>//@require &lt;path_to_file.js&gt;</code>` and adds  
+            resolved names into block file list (bundle).
+        </p>
+        <p>
+            Look at js console. Each js file in example project logs 
+            `<code>&lt;file_name.js&gt; loaded</code>`
+        </p>
+
+        <pre>
+ENTRY_POINT --&gt;  index.html
+                    |
+                    *--[include]-&gt; index.css
+                    |
+                    `--[inclide]-&gt; index.js
+                                        |
+                                        *--[require]-&gt; js/jquery-1.7.1.js
+                                        |
+                                        `--[require]-&gt; js/jquery-ui-1.8.16.js
+        </pre>
+    {% endblock %}
+    </div>
+</body>
+</html>

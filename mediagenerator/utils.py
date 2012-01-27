@@ -1,7 +1,9 @@
 from . import settings as media_settings
 from .settings import (GLOBAL_MEDIA_DIRS, PRODUCTION_MEDIA_URL,
     IGNORE_APP_MEDIA_DIRS, MEDIA_GENERATORS, DEV_MEDIA_URL,
-    GENERATED_MEDIA_NAMES_MODULE)
+    GENERATED_MEDIA_NAMES_MODULE, GENERATED_MEDIA_BLOCKS_MODULE,)
+
+from django import template
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.importlib import import_module
@@ -13,6 +15,15 @@ try:
     NAMES = import_module(GENERATED_MEDIA_NAMES_MODULE).NAMES
 except (ImportError, AttributeError):
     NAMES = None
+
+try:
+    _media_blocks = import_module(GENERATED_MEDIA_BLOCKS_MODULE)
+    MEDIA_BLOCKS_FILES      = _media_blocks.MEDIA_BLOCKS_FILES
+    MEDIA_BLOCKS_BUNDLES    = _media_blocks.MEDIA_BLOCKS_BUNDLES
+except (ImportError, AttributeError):
+    MEDIA_BLOCKS_FILES = None
+    MEDIA_BLOCKS_FILES = None
+
 
 _backends_cache = {}
 _media_dirs_cache = []
@@ -143,3 +154,62 @@ def _load_backend(path):
         return getattr(mod, attr_name)
     except AttributeError:
         raise ImproperlyConfigured('Module "%s" does not define a "%s" backend' % (module_name, attr_name))
+
+def get_media_bundles_names(block_name):
+    from mediagenerator.generators.bundles import provider
+    bundles =_get_block_bundles(block_name)
+    provider.default.set_data(bundles)
+    _refresh_dev_names()
+    return [b[0] for b in bundles]
+
+def get_media_bundles_blocks():
+    if media_settings.MEDIA_DEV_MODE:
+        return _get_dev_media_bundles_blocks()
+    else:
+        return MEDIA_BLOCKS_FILES, MEDIA_BLOCKS_BUNDLES
+
+def _get_dev_media_bundles_blocks():
+    from mediagenerator.generators.bundles import provider
+    blocks_files = {}
+    blocks_bundles = {}
+    for path in settings.TEMPLATE_DIRS:
+        os.path.walk(path, _walk_tmpl, (path, blocks_bundles, blocks_files))
+    
+    provider.default.set_data(blocks_bundles.values())
+    _refresh_dev_names()
+    return blocks_files, blocks_bundles;
+
+def _walk_tmpl(conf, dirname, names):
+    tmpl_dir, blocks_bundles, blocks_files = conf
+    tmpl_dir += "/"
+    for name in names:
+        fullname = os.path.join(dirname, name)
+        if os.path.isdir(fullname):
+            continue
+
+        if not fullname.endswith(".html"):
+            continue
+
+        fullname = fullname.replace(tmpl_dir, "")
+        bundles = _get_block_bundles(fullname)
+        if len(bundles):
+            blocks_files[fullname] = [b[0] for b in bundles]
+            for b in bundles:
+                bname = b[0]
+                if bname in blocks_bundles and blocks_bundles[bname] != b:
+                    raise Exception("Different bundles wigh same name: `%s`" % bname)
+
+                blocks_bundles[bname] = b
+
+def _get_block_bundles(block_name):
+    from mediagenerator.generators.bundles.collector import collector
+    try:
+        tmpl = template.loader.get_template(block_name)
+    except Exception, e:
+        print "Warning: Unable to parse template `%s`: %s" % (block_name, repr(e))
+        return []
+    meta_found, bundles = collector.find_bundles(tmpl)
+    if meta_found:
+        return bundles
+    else:
+        return []

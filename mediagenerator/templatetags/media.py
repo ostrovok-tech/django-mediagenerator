@@ -36,6 +36,16 @@ def include_media(parser, token):
 
     return MediaNode(bundle, variation)
 
+class MetaNode(template.Node):
+    def render(self, context):
+        if "__tmplname__" not in context:
+            raise Exception("You can't use tag {% media_meta %} with `MEDIA_BLOCKS` option seted to False")
+
+        names = utils.get_media_bundles_names(context["__tmplname__"])
+        if not len(names):
+            return "<!-- WARNING: No bundles found for template %s -->" % context["__tmplname__"]
+        return "\n".join([_render_include_media(name, {}) for name in names])
+
 @register.simple_tag
 def media_url(url):
     return utils.media_url(url)
@@ -43,3 +53,8 @@ def media_url(url):
 @register.filter
 def media_urls(url):
     return utils.media_urls(url)
+
+@register.tag
+def media_meta(parser, token):
+    meta = MetaNode()
+    return meta

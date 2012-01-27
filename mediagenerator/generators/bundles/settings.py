@@ -1,4 +1,5 @@
 from django.conf import settings
+from mediagenerator.generators.bundles import provider
 
 DEFAULT_MEDIA_FILTERS = getattr(settings, 'DEFAULT_MEDIA_FILTERS', {
     'ccss': 'mediagenerator.filters.clever.CleverCSS',
@@ -32,4 +33,10 @@ BASE_ROOT_MEDIA_FILTERS = getattr(settings, 'BASE_ROOT_MEDIA_FILTERS', {
     'css': 'mediagenerator.filters.cssurl.CSSURL',
 })
 
-MEDIA_BUNDLES = getattr(settings, 'MEDIA_BUNDLES', ())
+provider.default.default = getattr(settings, 'MEDIA_BUNDLES', [])
+MEDIA_BUNDLES = provider.default
+TEMPLATE_DIRS = getattr(settings, 'TEMPLATE_DIRS', ())
+MEDIA_CSS_LOCATION = getattr(settings, "MEDIA_CSS_LOCATION", "css")
+MEDIA_JS_LOCATION = getattr(settings, "MEDIA_JS_LOCATION", "js")
+MEDIA_CSS_EXT = getattr(settings, "MEDIA_CSS_EXT", ('css', 'scss'))
+MEDIA_JS_EXT = getattr(settings, "MEDIA_JS_EXT", ('js',))

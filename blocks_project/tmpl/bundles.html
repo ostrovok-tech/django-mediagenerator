@@ -1,0 +1,15 @@
+{% extends 'index.html' %}
+{% load media %}
+{% block custom_meta %}
+    {% include_media 'custom.js' %}
+{% endblock %}
+
+{% block content %}
+    <h4>
+        Combine blocks behavior with default mediagenerator behavior.
+    </h4>
+    <p>
+        Blocks behaviour and default behaviour works together. 
+        `<code>custom.js</code>` bundle included in meta.
+    </p>
+{% endblock %}

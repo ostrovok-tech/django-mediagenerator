@@ -1,0 +1,32 @@
+body {
+    padding: 20px;
+    font: 14px sans-serif;
+}
+
+pre {
+    border: 1px solid #333;
+    background: #afafaf;
+    padding: 10px;
+}
+
+.medium {
+    width: 800px;
+}
+
+.menu-item {
+    display: inline-block;
+    padding: 3px;
+}
+
+a {
+    font-family: monospace;
+    color: #111;
+}
+
+a:visited {
+    color: #333;
+}
+
+a:hover {
+    color: #666;
+}

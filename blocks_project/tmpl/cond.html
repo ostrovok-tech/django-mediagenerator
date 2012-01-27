@@ -1,0 +1,16 @@
+{% extends 'index.html' %}
+
+{% block content %}
+    <h4>
+        All nodes include no matter of condition result
+    </h4>
+    <p>
+        `<code>cond_true.html</code>` and `<code>cond_false.html</code>` 
+        both included in resulting bundle.
+    </p>
+    {% if 1 > 2 %}
+        {% include 'cond_false.html' %}
+    {% else %}
+        {% include 'cond_true.html' %}
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends 'index.html' %}
+
+{% block content %}
+        <h4>
+            Block `<code>inherit.html</code>` extends `<code>index.html</code>`.
+        </h4>
+        There is a block we include (`<code>inc_content.html</code>`) which
+        extends some other block (`<code>bordered.html</code>`).
+        <div class="outer-include">
+            {% include 'inc_content.html' %}
+        </div>
+{% endblock %}
+
