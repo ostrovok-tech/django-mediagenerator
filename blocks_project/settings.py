@@ -152,7 +152,7 @@ LOGGING = {
 }
 
 MEDIA_BLOCKS = True
-MEDIA_DEV_MODE = False
+MEDIA_DEV_MODE = True
 DEV_MEDIA_URL = '/static-dev/' if MEDIA_DEV_MODE else '/static/'
 MEDIA_BUNDLES = (
     ('custom.js',

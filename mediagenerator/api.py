@@ -50,6 +50,3 @@ def prepare_media():
     with open(GENERATED_MEDIA_BLOCKS_FILE, "w") as sf:
         sf.write("MEDIA_BLOCKS_FILES=" + repr(blocks_files) + "\n")
         sf.write("MEDIA_BLOCKS_BUNDLES=" + repr(blocks_bundles) + "\n")
-
-    for name, b in blocks_bundles.items():
-        print name, b

@@ -1,5 +1,7 @@
 import os.path
 import re
+import hashlib
+
 
 from .settings import (MEDIA_CSS_LOCATION,
     MEDIA_JS_LOCATION, MEDIA_CSS_EXT, MEDIA_JS_EXT )
@@ -11,8 +13,9 @@ from django import template
 
 class MediaBlock(object):
     re_js_req = re.compile('//@require (.*)', re.UNICODE)
-    def __init__(self, block):
+    def __init__(self, block, uniques):
         self.bundle_entries = [re.sub('\.html', "", b) for b in block]
+        self.uniques = uniques
 
     def tmpl_name(self):
         if not len(self.bundle_entries):
@@ -22,7 +25,7 @@ class MediaBlock(object):
 
     def get_bundles(self):
         res = []
-        entries = set()
+        entries = self.uniques
         for typ in ('js', 'css'):
             bundle_name = self.bundle_entries[0] + "." + typ
             bundle = [bundle_name]
@@ -99,18 +102,35 @@ class Collector(object):
         self.root_name = None
         self.meta_found = False
 
+
         res = []
+        blocks = list(reversed(blocks))
+        uniques = set()
         for b in blocks:
-            res += MediaBlock(b).get_bundles()
+            res += MediaBlock(b, uniques).get_bundles()
+        
+        self.normilize_names(res)
 
         return meta_found, res
 
+    def normilize_names(self, blocks):
+        for block in blocks:
+            # first 6 letters is enought from sha1
+            key = hashlib.sha1(''.join(block)).hexdigest()[:6]
+            bname, bext = block[0].rsplit(".", 1)
+            bname = bname.replace("/", "-")
+            if bext:
+                block[0] = "%s-%s.%s" % (bname, key, bext)
+            else:
+                block[0] = "%s-%s" ( bname, key)
+
+
+
     def event(self, arg):
-        print "Event", arg
         if isinstance(arg, template.loader_tags.ExtendsNode):
             if not arg.parent_name:
                 raise Exception("Only static extend suported")
-
+            
             for node in arg.nodelist:
                 self.event(node)
             
@@ -121,6 +141,7 @@ class Collector(object):
             for node in tmpl.nodelist:
                 self.event(node)
             self.pool.pop()
+            
             
         elif isinstance(arg, template.loader_tags.BlockNode):
            for node in arg.nodelist:
