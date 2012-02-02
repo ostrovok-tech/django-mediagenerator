@@ -2,7 +2,6 @@ def patch():
     from django.conf import settings
     if getattr(settings, "MEDIA_BLOCKS", False):
         from django import template 
-        print "Patching"
         from django.views.generic import simple
 
         orig_render_to_string       = template.loader.render_to_string

@@ -20,23 +20,25 @@ class Provider(object):
             self.p = data
 
     def __iter__(self):
-        self.iterkey = -1
-        return self
+        for b in self.default:
+            yield b
+
+        for b in self.p:
+            yield b
 
     def __len__(self):
-        return len(self.p)
+        return len(self.default) + len(self.p)
 
     def __getitem__(self, at):
-        return self.p[at]
+        if at > len(self.default):
+            return self.p[at-len(self.default)]
+        else:
+            return self.default[at]
 
     def __setitem__(self, at, i):
-        self.p[at] = i
-
-    def next(self):
-        self.iterkey += 1
-        if self.iterkey >= len(self.p):
-            raise StopIteration
+        if at > len(self.default):
+            self.p[at-len(self.default)] = i
         else:
-            return self.p[self.iterkey]
+            self.default[at] = i
 
 default = Provider()
