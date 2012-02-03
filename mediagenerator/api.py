@@ -45,8 +45,8 @@ def generate_media():
 
 
 def prepare_media():
-
-    blocks_files, blocks_bundles = _get_dev_media_bundles_blocks()
-    with open(GENERATED_MEDIA_BLOCKS_FILE, "w") as sf:
-        sf.write("MEDIA_BLOCKS_FILES=" + repr(blocks_files) + "\n")
-        sf.write("MEDIA_BLOCKS_BUNDLES=" + repr(blocks_bundles) + "\n")
+    if settings.MEDIA_BLOCKS:
+        blocks_files, blocks_bundles = _get_dev_media_bundles_blocks()
+        with open(GENERATED_MEDIA_BLOCKS_FILE, "w") as sf:
+            sf.write("MEDIA_BLOCKS_FILES=" + repr(blocks_files) + "\n")
+            sf.write("MEDIA_BLOCKS_BUNDLES=" + repr(blocks_bundles) + "\n")
