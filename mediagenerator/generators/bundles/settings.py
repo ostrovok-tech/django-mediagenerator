@@ -19,6 +19,7 @@ DEFAULT_MEDIA_FILTERS = getattr(settings, 'DEFAULT_MEDIA_FILTERS', {
     ),
     'less': 'mediagenerator.filters.less.Less',
     'sprite': 'mediagenerator.filters.sprite.Sprite',
+    'jst': 'mediagenerator.filters.jstemplate.JSTFilter'
 })
 
 

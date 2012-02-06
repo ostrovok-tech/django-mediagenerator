@@ -1,7 +1,9 @@
 
-from scss import parser
+from scss import Scss
 
 from mediagenerator.generators.bundles.base import FileFilter
+
+compiler = Scss()
 
 class ScssFilter(FileFilter):
     
@@ -17,7 +19,7 @@ class ScssFilter(FileFilter):
         if not content:
             content = super(ScssFilter, self).get_dev_output(name, variation)
         
-        return parser.parse(str(content.encode("utf8")))
+        return compiler.compile(str(content.encode("utf8")))
 
 
         
