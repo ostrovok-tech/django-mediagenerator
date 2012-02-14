@@ -37,11 +37,18 @@ def include_media(parser, token):
     return MediaNode(bundle, variation)
 
 class MetaNode(template.Node):
+    def __init__(self, custom_meta):
+        super(MetaNode, self).__init__()
+        self.custom_meta = custom_meta
+
     def render(self, context):
         if "__tmplname__" not in context:
             raise Exception("You can't use tag {% media_meta %} with `MEDIA_BLOCKS` option seted to False")
 
         names = utils.get_media_bundles_names(context["__tmplname__"])
+        if self.custom_meta:
+            names = filter(lambda n: n.endswith("." + self.custom_meta), names)
+
         if not len(names):
             return "<!-- WARNING: No bundles found for template %s -->" % context["__tmplname__"]
         return "\n".join([_render_include_media(name, {}) for name in names])
@@ -56,5 +63,12 @@ def media_urls(url):
 
 @register.tag
 def media_meta(parser, token):
-    meta = MetaNode()
+    custom_meta = False
+    args = token.split_contents()
+    if len(args) == 2:
+        custom_meta = args[1]
+        if custom_meta not in ('css', 'js'):
+            raise RuntimeError("Bad context for media_meta: shoud be 'css', 'js' or empty")
+
+    meta = MetaNode(custom_meta)
     return meta

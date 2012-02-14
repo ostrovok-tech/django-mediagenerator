@@ -3,6 +3,7 @@ from .settings import (GLOBAL_MEDIA_DIRS, PRODUCTION_MEDIA_URL,
     IGNORE_APP_MEDIA_DIRS, MEDIA_GENERATORS, DEV_MEDIA_URL,
     GENERATED_MEDIA_NAMES_MODULE, GENERATED_MEDIA_BLOCKS_MODULE,)
 
+
 from django import template
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -20,6 +21,9 @@ try:
     _media_blocks = import_module(GENERATED_MEDIA_BLOCKS_MODULE)
     MEDIA_BLOCKS_FILES      = _media_blocks.MEDIA_BLOCKS_FILES
     MEDIA_BLOCKS_BUNDLES    = _media_blocks.MEDIA_BLOCKS_BUNDLES
+    if media_settings.MEDIA_DEV_MODE:
+        from mediagenerator.generators.bundles import provider
+        provider.default.set_data(MEDIA_BLOCKS_BUNDLES.values())
 except (ImportError, AttributeError):
     MEDIA_BLOCKS_FILES = None
     MEDIA_BLOCKS_FILES = None
@@ -156,11 +160,15 @@ def _load_backend(path):
         raise ImproperlyConfigured('Module "%s" does not define a "%s" backend' % (module_name, attr_name))
 
 def get_media_bundles_names(block_name):
-    from mediagenerator.generators.bundles import provider
-    bundles =_get_block_bundles(block_name)
-    provider.default.set_data(bundles)
-    _refresh_dev_names()
-    return [b[0] for b in bundles]
+    if media_settings.MEDIA_DEV_MODE:
+        provider = import_module("mediagenerator.generators.bundles.provider")
+        bundles =_get_block_bundles(block_name)
+        provider.default.set_data(bundles)
+        _refresh_dev_names()
+        return [b[0] for b in bundles]
+    else:
+        files, bundles = get_media_bundles_blocks()
+        return files[block_name]
 
 def get_media_bundles_blocks():
     if media_settings.MEDIA_DEV_MODE:
@@ -168,15 +176,16 @@ def get_media_bundles_blocks():
     else:
         return MEDIA_BLOCKS_FILES, MEDIA_BLOCKS_BUNDLES
 
-def _get_dev_media_bundles_blocks():
-    from mediagenerator.generators.bundles import provider
+def _get_dev_media_bundles_blocks(refresh_names=True):
     blocks_files = {}
     blocks_bundles = {}
     for path in settings.TEMPLATE_DIRS:
         os.path.walk(path, _walk_tmpl, (path, blocks_bundles, blocks_files))
     
+    provider = import_module("mediagenerator.generators.bundles.provider")
     provider.default.set_data(blocks_bundles.values())
-    _refresh_dev_names()
+    if refresh_names:
+        _refresh_dev_names()
     return blocks_files, blocks_bundles;
 
 def _walk_tmpl(conf, dirname, names):

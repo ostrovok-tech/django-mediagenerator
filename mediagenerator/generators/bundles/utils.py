@@ -1,4 +1,5 @@
-from .settings import ROOT_MEDIA_FILTERS, MEDIA_BUNDLES, BASE_ROOT_MEDIA_FILTERS
+from .settings import ROOT_MEDIA_FILTERS, BASE_ROOT_MEDIA_FILTERS
+from .provider import default as MEDIA_BUNDLES
 from mediagenerator.settings import MEDIA_DEV_MODE
 from mediagenerator.utils import load_backend, media_urls
 import os

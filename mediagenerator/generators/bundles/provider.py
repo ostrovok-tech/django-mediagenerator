@@ -1,23 +1,12 @@
+from .settings import MEDIA_BUNDLES
 class Provider(object):
     def __init__(self, default_data=None):
         self.default = default_data
         self.p = []
-        
-        try:
-            from mediagenerator.utils import MEDIA_BLOCKS_BUNDLES
-            if MEDIA_BLOCKS_BUNDLES:
-                self.p = MEDIA_BLOCKS_BUNDLES.values()
-        except (ImportError, AttributeError):
-            print "Unable to import MEDIABLOCKS_BUNDLES"
-
-
         self.iterkey = -1
 
     def set_data(self, data):
-        if self.default:
-            self.p = list(self.default) + data
-        else:
-            self.p = data
+        self.p = data
 
     def __iter__(self):
         for b in self.default:
@@ -41,4 +30,4 @@ class Provider(object):
         else:
             self.default[at] = i
 
-default = Provider()
+default = Provider(MEDIA_BUNDLES)

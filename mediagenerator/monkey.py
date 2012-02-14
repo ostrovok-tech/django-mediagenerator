@@ -14,7 +14,7 @@ def patch():
                 d = {}
 
             d["__tmplname__"] = template_name
-            return orig_render_to_string(d, context_instance)
+            return orig_render_to_string(template_name, d, context_instance)
 
         def direct_to_template(request, template, extra_context=None, mimetype=None, **kwargs):
             if extra_context == None:

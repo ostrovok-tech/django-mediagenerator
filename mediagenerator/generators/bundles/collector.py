@@ -11,6 +11,64 @@ from mediagenerator.utils import find_file
 from mediagenerator.templatetags.media import MetaNode
 from django import template
 
+class CommentResolver(object):
+    resolve_re = re.compile(r"^ *(/?\*?/?)? *(@require (?P<d>['\"])(.*?)(?P=d))? *(/?\*?/?)$", re.M|re.U)
+    _cache = {}
+    def __init__(self, lang):
+        self.lang = lang
+        self.comment_start = False
+        self.result = []
+
+    def resolve(self, fname):
+        fname = find_file(fname)
+        if fname in self._cache:
+            result, times = self._cache[fname]
+            if not self.is_changed(result, times):
+                return result
+
+        with open(fname) as sf:
+            content = sf.read()
+
+        result = self._resolve(content)
+        times = self.calc_changed(result)
+        self._cache[fname] = result, times
+
+        return result
+
+    def calc_changed(self, fnames):
+        changed = []
+        for f in fnames:
+            changed.append(os.path.getmtime(find_file(f)))
+        return changed
+
+    def is_changed(self, fnames, times):
+        return times != self.calc_changed(fnames)
+
+
+    def _resolve(self, source):
+        self.comment_start = False
+        self.result = []
+        self.resolve_re.sub(self._filter, source)
+        return self.result
+
+    def _filter(self, m):
+        if m.group(1) == "/*":
+            self.comment_start = True
+        
+        if self.lang == "js":
+            single_comment = m.group(1) == "//"
+        else:
+            single_comment = False
+
+        if (self.comment_start or single_comment) and m.group(4):
+            self.result.append(m.group(4))
+
+        if m.group(1) == "*/" or m.group(5) == "*/":
+            self.comment_start = False
+
+        return m.group(0)
+
+
 class MediaBlock(object):
     re_js_req = re.compile('//@require (.*)', re.UNICODE)
     def __init__(self, block, uniques):
@@ -47,21 +105,30 @@ class MediaBlock(object):
             entry_name = os.path.join(MEDIA_JS_LOCATION, name + "." + ext)
             entry_file = find_file(entry_name)
             if entry_file:
-                result += self._find_js_deps(entry_file)
+                result += self._find_deps(entry_file, "js")
+                result.append(entry_name)
+
+        return result
+    
+    def _find_css(self, name):
+        result = []
+        for ext in MEDIA_CSS_EXT:
+            entry_name = os.path.join(MEDIA_CSS_LOCATION, name + "." + ext)
+            entry_file = find_file(entry_name)
+            if entry_file:
+                result += self._find_deps(entry_file, "css")
                 result.append(entry_name)
 
         return result
 
 
-    def _find_js_deps(self, name):
+    def _find_deps(self, name, lang):
         pool = [name]
         deps = []
+        resolver = CommentResolver(lang)
         while len(pool):
-            with open(pool.pop(0)) as sf:
-                content = sf.read()
 
-            current_deps = []
-            self.re_js_req.sub(lambda n: current_deps.append(n.group(1)), content)
+            current_deps = resolver.resolve(pool.pop(0))
             for dep in current_deps:
                 dep_file = find_file(dep)
                 if dep_file and dep not in deps:
@@ -69,14 +136,6 @@ class MediaBlock(object):
                     deps.append(dep)
         return deps
 
-    def _find_css(self, name):
-        result = []
-        for ext in MEDIA_CSS_EXT:
-            entry_name = os.path.join(MEDIA_CSS_LOCATION, name + "." + ext)
-            if find_file(entry_name):
-                result.append(entry_name)
-
-        return result
 
 class Collector(object):
 
@@ -137,7 +196,7 @@ class Collector(object):
             extend = [arg.parent_name]
             self.blocks.append(extend)
             self.pool.append(extend)
-            tmpl, origin = template.loader.find_template(arg.parent_name)
+            tmpl = template.loader.get_template(arg.parent_name)
             for node in tmpl.nodelist:
                 self.event(node)
             self.pool.pop()

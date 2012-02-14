@@ -1,5 +1,5 @@
-from .settings import MEDIA_BUNDLES
 from .utils import _load_root_filter, _get_key
+from .provider import default as MEDIA_BUNDLES
 try:
     from itertools import product
 except ImportError:
@@ -15,6 +15,15 @@ import os
 
 class Bundles(Generator):
     def get_output(self):
+        print "Bundles default: "
+        for item in MEDIA_BUNDLES.default:
+            print "   ", item[0]
+        
+        print "Bundles generated: "
+        for item in MEDIA_BUNDLES.p:
+            print "   ", item[0]
+
+        print "Done"
         for items in MEDIA_BUNDLES:
             bundle = items[0]
             backend = _load_root_filter(bundle)

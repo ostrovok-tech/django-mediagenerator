@@ -46,7 +46,18 @@ def generate_media():
 
 def prepare_media():
     if settings.MEDIA_BLOCKS:
-        blocks_files, blocks_bundles = _get_dev_media_bundles_blocks()
+        blocks_files, blocks_bundles = _get_dev_media_bundles_blocks(refresh_names=False)
         with open(GENERATED_MEDIA_BLOCKS_FILE, "w") as sf:
             sf.write("MEDIA_BLOCKS_FILES=" + repr(blocks_files) + "\n")
             sf.write("MEDIA_BLOCKS_BUNDLES=" + repr(blocks_bundles) + "\n")
+
+def analize_media():
+    entry_points = set(settings.MEDIA_TESTED_POINTS)
+    blocks_files, blocks_bundles = _get_dev_media_bundles_blocks(refresh_names=False)
+    for entry in blocks_files.keys():
+        if not (entry in entry_points):
+            print "Warning: Block `%s` looks like entry point, but is not tested." % entry
+
+    for entry in entry_points:
+        if entry not in blocks_files:
+            print "Warning: Block `%s` marked as tested, but but is not actuially entry point" % entry
