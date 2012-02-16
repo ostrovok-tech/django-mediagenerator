@@ -38,7 +38,10 @@ class CommentResolver(object):
     def calc_changed(self, fnames):
         changed = []
         for f in fnames:
-            changed.append(os.path.getmtime(find_file(f)))
+            f = find_file(f)
+            if f:
+                changed.append(os.path.getmtime(f))
+
         return changed
 
     def is_changed(self, fnames, times):
