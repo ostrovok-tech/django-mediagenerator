@@ -30,7 +30,7 @@ class JSTFilter(FileFilter):
         plain = plain.replace("\r", "\\r")
         plain = plain.replace("\t", "\\t")
 
-        footer  = "');}return __p.join('');}}";
+        footer  = "');}return __p.join('');}};";
 
         
         return tmpl + plain + footer
