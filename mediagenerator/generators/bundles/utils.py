@@ -1,6 +1,6 @@
 from .settings import ROOT_MEDIA_FILTERS, BASE_ROOT_MEDIA_FILTERS
 from .provider import default as MEDIA_BUNDLES
-from mediagenerator.settings import MEDIA_DEV_MODE
+from mediagenerator.settings import MEDIA_DEV_MODE, MEDIA_BLOCKS
 from mediagenerator.utils import load_backend, media_urls
 import os
 
@@ -83,4 +83,8 @@ def _render_include_media(bundle, variation):
     else:
         raise ValueError("""Don't know how to include file type "%s".""" % filetype)
 
-    return '\n'.join(tag % url for url in urls)
+    tags_result = '\n'.join(tag % url for url in urls)
+    if MEDIA_BLOCKS and bundle.endswith(".ie.css"):
+        return "<!--[if lt IE 9]>%s<![endif]-->" % tags_result
+    else:
+        return tags_result

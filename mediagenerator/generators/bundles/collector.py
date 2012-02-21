@@ -99,7 +99,31 @@ class MediaBlock(object):
             if len(bundle) == 1: continue
             res.append(bundle)
 
-        return res
+        # make ie bundles here
+        ie_res = []
+        for bundle in res:
+            if bundle[0].endswith(".js"):
+                ie_res.append(bundle)
+                continue
+
+            name, ext = bundle.pop(0).rsplit(".", 1)
+
+            ie_bundle = [name + ".ie." + ext]
+            norm_bundle = [name + "." + ext]
+            for entry in bundle:
+                if entry.endswith(".ie.css"):
+                    ie_bundle.append(entry)
+                else:
+                    norm_bundle.append(entry)
+
+
+            if len(norm_bundle) > 1:
+                ie_res.append(norm_bundle)
+            
+            if len(ie_bundle) > 1:
+                ie_res.append(ie_bundle)
+
+        return ie_res
 
 
     def _find_js(self, name):
@@ -180,6 +204,9 @@ class Collector(object):
             # first 6 letters is enought from sha1
             key = hashlib.sha1(''.join(block)).hexdigest()[:6]
             bname, bext = block[0].rsplit(".", 1)
+            if bext == "css" and bname.endswith(".ie"):
+                bext = "ie.css"
+
             bname = bname.replace("/", "-")
             if bext:
                 block[0] = "%s-%s.%s" % (bname, key, bext)
@@ -193,17 +220,20 @@ class Collector(object):
             if not arg.parent_name:
                 raise Exception("Only static extend suported")
             
-            for node in arg.nodelist:
-                self.event(node)
-            
-            extend = [arg.parent_name]
-            self.blocks.append(extend)
-            self.pool.append(extend)
-            tmpl = template.loader.get_template(arg.parent_name)
-            for node in tmpl.nodelist:
-                self.event(node)
-            self.pool.pop()
-            
+            try:
+                tmpl = template.loader.get_template(arg.parent_name)
+                for node in arg.nodelist:
+                    self.event(node)
+                
+                extend = [arg.parent_name]
+                self.blocks.append(extend)
+                self.pool.append(extend)
+                for node in tmpl.nodelist:
+                    self.event(node)
+                self.pool.pop()
+
+            except template.base.TemplateDoesNotExist, e:
+                print "Warning: Block `%s` will not fully processed: %s" % (arg.parent_name, repr(e))
             
         elif isinstance(arg, template.loader_tags.BlockNode):
            for node in arg.nodelist:
