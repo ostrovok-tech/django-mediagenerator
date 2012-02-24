@@ -154,7 +154,6 @@ class MediaBlock(object):
         deps = []
         resolver = CommentResolver(lang)
         while len(pool):
-
             current_deps = resolver.resolve(pool.pop(0))
             for dep in current_deps:
                 dep_file = find_file(dep)
@@ -241,6 +240,10 @@ class Collector(object):
         elif isinstance(arg, template.loader_tags.IncludeNode):
             print "Warning: Block `%s` will not fully processed: only static include supported" % self.root_name
         elif isinstance(arg, template.loader_tags.ConstantIncludeNode):
+            if not arg.template:
+                print "Warnign: Block `%s` will not fully processed: not all includes exists" % self.root_name
+                return 
+
             self.pool[-1].append(arg.template.name)
             for node in arg.template.nodelist:
                 self.event(node)
