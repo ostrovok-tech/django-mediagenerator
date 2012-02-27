@@ -1,12 +1,13 @@
 import os
 import re
+import time
 
 from mediagenerator.generators.bundles.base import FileFilter
 from mediagenerator.utils import find_file
 
 class CssImport(FileFilter):
     
-    rewrite_re = re.compile("@import url\(\s*[\"']([0-9a-zA-Z/_\.\-]+?)['\"]?\s*\)\s*;?", re.UNICODE)
+    rewrite_re = re.compile("@import \s*[\"'](.*?)['\"]\s*;?", re.UNICODE)
     def __init__(self, **kwargs):
         super(CssImport, self).__init__(**kwargs)
         assert self.filetype == 'css', (
@@ -33,7 +34,7 @@ class CssImport(FileFilter):
             info = self.name, lineno, fname, e
             print "[%s:%d] Can't import file `%s`: %s" % info
             return ""
-
+        
         return content
 
     def get_last_modified(self):
@@ -43,7 +44,7 @@ class CssImport(FileFilter):
         lm = 0
         for f in files:
             fname = find_file(f)
-            if not fname: continue
+            if not fname: return time.time()
             fmod = os.path.getmtime(fname)
             if fmod > lm: lm = fmod
 

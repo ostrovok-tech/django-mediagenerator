@@ -12,6 +12,7 @@ DEFAULT_MEDIA_FILTERS = getattr(settings, 'DEFAULT_MEDIA_FILTERS', {
     'pyva': 'mediagenerator.filters.pyvascript_filter.PyvaScript',
     'sass': 'mediagenerator.filters.sass.Sass',
     'scss': (
+        'mediagenerator.filters.cssimport.CssImport',
         'mediagenerator.filters.sprite.CSSSprite',
         'mediagenerator.filters.scssfilter.ScssFilter',
     ),
