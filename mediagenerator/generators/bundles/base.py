@@ -4,6 +4,7 @@ from hashlib import sha1
 from mediagenerator.settings import MEDIA_DEV_MODE
 from mediagenerator.utils import load_backend, find_file, read_text_file
 import os
+import time
 
 class Filter(object):
     takes_input = True
@@ -170,8 +171,8 @@ class FileFilter(Filter):
         return read_text_file(self._get_path())
 
     def get_last_modified(self):
-        path = self._get_path()
-        return os.path.getmtime(path)
+        path = find_file(self.name)
+        return path and os.path.getmtime(path)
 
     def get_dev_output_names(self, variation):
         mtime = self.get_last_modified()
@@ -235,6 +236,8 @@ class FilterPipe(FileFilter):
         lmod = 0
         for entry in self.pipe:
             entry_lm = entry.get_last_modified()
+            if not entry_lm: return time.time()
+
             if entry_lm > lmod:
                 lmod = entry_lm
         

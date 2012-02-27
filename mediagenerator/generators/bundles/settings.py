@@ -12,7 +12,6 @@ DEFAULT_MEDIA_FILTERS = getattr(settings, 'DEFAULT_MEDIA_FILTERS', {
     'pyva': 'mediagenerator.filters.pyvascript_filter.PyvaScript',
     'sass': 'mediagenerator.filters.sass.Sass',
     'scss': (
-        'mediagenerator.filters.cssimport.CssImport',
         'mediagenerator.filters.sprite.CSSSprite',
         'mediagenerator.filters.scssfilter.ScssFilter',
     ),
@@ -38,4 +37,4 @@ TEMPLATE_DIRS = getattr(settings, 'TEMPLATE_DIRS', ())
 MEDIA_CSS_LOCATION = getattr(settings, "MEDIA_CSS_LOCATION", "css")
 MEDIA_JS_LOCATION = getattr(settings, "MEDIA_JS_LOCATION", "js")
 MEDIA_CSS_EXT = getattr(settings, "MEDIA_CSS_EXT", ('css', 'scss'))
-MEDIA_JS_EXT = getattr(settings, "MEDIA_JS_EXT", ('js',))
+MEDIA_JS_EXT = getattr(settings, "MEDIA_JS_EXT", ('js', 'jst'))

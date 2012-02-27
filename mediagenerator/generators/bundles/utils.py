@@ -7,7 +7,7 @@ import os
 _cache = {}
 
 def _load_root_filter(bundle):
-    if bundle not in _cache:
+    if MEDIA_DEV_MODE or bundle not in _cache:
         _cache[bundle] = _load_root_filter_uncached(bundle)
     return _cache[bundle]
 

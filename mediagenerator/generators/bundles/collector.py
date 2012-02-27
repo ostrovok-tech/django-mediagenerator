@@ -22,31 +22,19 @@ class CommentResolver(object):
     def resolve(self, fname):
         fname = find_file(fname)
         if fname in self._cache:
-            result, times = self._cache[fname]
-            if not self.is_changed(result, times):
+            result, time = self._cache[fname]
+            mtime = os.path.getmtime(fname)
+            if time == mtime: 
                 return result
 
         with open(fname) as sf:
             content = sf.read()
 
         result = self._resolve(content)
-        times = self.calc_changed(result)
-        self._cache[fname] = result, times
+        time = os.path.getmtime(fname)
+        self._cache[fname] = result, time
 
         return result
-
-    def calc_changed(self, fnames):
-        changed = []
-        for f in fnames:
-            f = find_file(f)
-            if f:
-                changed.append(os.path.getmtime(f))
-
-        return changed
-
-    def is_changed(self, fnames, times):
-        return times != self.calc_changed(fnames)
-
 
     def _resolve(self, source):
         self.comment_start = False
@@ -200,17 +188,7 @@ class Collector(object):
 
     def normilize_names(self, blocks):
         for block in blocks:
-            # first 6 letters is enought from sha1
-            key = hashlib.sha1(''.join(block)).hexdigest()[:6]
-            bname, bext = block[0].rsplit(".", 1)
-            if bext == "css" and bname.endswith(".ie"):
-                bext = "ie.css"
-
-            bname = bname.replace("/", "-")
-            if bext:
-                block[0] = "%s-%s.%s" % (bname, key, bext)
-            else:
-                block[0] = "%s-%s" ( bname, key)
+            block[0] = block[0].replace("/", "-")
 
 
 
