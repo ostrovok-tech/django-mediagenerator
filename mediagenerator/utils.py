@@ -26,7 +26,7 @@ try:
         provider.default.set_data(MEDIA_BLOCKS_BUNDLES.values())
 except (ImportError, AttributeError):
     MEDIA_BLOCKS_FILES = None
-    MEDIA_BLOCKS_FILES = None
+    MEDIA_BLOCKS_BUNDLES = None
 
 
 _backends_cache = {}
