@@ -220,7 +220,7 @@ class Collector(object):
         elif isinstance(arg, template.loader_tags.ConstantIncludeNode):
             if not arg.template:
                 print "Warnign: Block `%s` will not fully processed: not all includes exists" % self.root_name
-                return 
+                return
 
             self.pool[-1].append(arg.template.name)
             for node in arg.template.nodelist:
@@ -229,6 +229,9 @@ class Collector(object):
             for node in arg.nodelist_true:
                 self.event(node)
             for node in arg.nodelist_false:
+                self.event(node)
+        elif isinstance(arg, template.defaulttags.ForNode):
+            for node in arg:
                 self.event(node)
         elif isinstance(arg, MetaNode):
             self.meta_found = True
