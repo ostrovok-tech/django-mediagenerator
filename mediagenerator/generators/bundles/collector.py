@@ -1,6 +1,5 @@
 import os.path
 import re
-import hashlib
 
 
 from .settings import (MEDIA_CSS_LOCATION,
@@ -232,6 +231,9 @@ class Collector(object):
                 self.event(node)
         elif isinstance(arg, template.defaulttags.ForNode):
             for node in arg:
+                self.event(node)
+        elif isinstance(arg, template.defaulttags.WithNode):
+            for node in arg.nodelist:
                 self.event(node)
         elif isinstance(arg, MetaNode):
             self.meta_found = True
