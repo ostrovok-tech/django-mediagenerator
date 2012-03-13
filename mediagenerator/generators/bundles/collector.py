@@ -116,22 +116,36 @@ class MediaBlock(object):
     def _find_js(self, name):
         result = []
         for ext in MEDIA_JS_EXT:
-            entry_name = os.path.join(MEDIA_JS_LOCATION, name + "." + ext)
-            entry_file = find_file(entry_name)
-            if entry_file:
-                result += self._find_deps(entry_file, "js")
-                result.append(entry_name)
+            if isinstance(MEDIA_JS_LOCATION, basestring):
+                locations = [MEDIA_JS_LOCATION]
+            else:
+                locations = MEDIA_JS_LOCATION
+
+            for location in locations:
+                entry_name = os.path.join(location, name + "." + ext)
+                entry_file = find_file(entry_name)
+                if entry_file:
+                    result += self._find_deps(entry_file, "js")
+                    result.append(entry_name)
+                    break
 
         return result
     
     def _find_css(self, name):
         result = []
         for ext in MEDIA_CSS_EXT:
-            entry_name = os.path.join(MEDIA_CSS_LOCATION, name + "." + ext)
-            entry_file = find_file(entry_name)
-            if entry_file:
-                result += self._find_deps(entry_file, "css")
-                result.append(entry_name)
+            if isinstance(MEDIA_CSS_LOCATION, basestring):
+                locations = [MEDIA_CSS_LOCATION]
+            else:
+                locations = MEDIA_CSS_LOCATION
+
+            for location in locations:
+                entry_name = os.path.join(location, name + "." + ext)
+                entry_file = find_file(entry_name)
+                if entry_file:
+                    result += self._find_deps(entry_file, "css")
+                    result.append(entry_name)
+                    break
 
         return result
 
