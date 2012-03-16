@@ -4,7 +4,7 @@ import glob2
 
 
 
-from .settings import (MEDIA_CSS_LOCATION,
+from .settings import (MEDIA_RELATIVE_RESOLVE, MEDIA_CSS_LOCATION,
     MEDIA_JS_LOCATION, MEDIA_CSS_EXT, MEDIA_JS_EXT )
 
 #from mediagenerator import settings
@@ -30,10 +30,14 @@ class CommentResolver(object):
 
         with open(fname) as sf:
             content = sf.read()
-        
-        result = []
-        for r in self._resolve(content):
-            result += _find_files(os.path.split(fname)[0], r)
+         
+        # for testing purposes
+        if MEDIA_RELATIVE_RESOLVE:
+            result = self._resolve(content)
+        else:
+            result = []
+            for r in self._resolve(content):
+                result += _find_files(os.path.split(fname)[0], r)
 
         time = os.path.getmtime(fname)
         self._cache[fname] = result, time
