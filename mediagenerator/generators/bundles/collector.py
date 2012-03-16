@@ -1,17 +1,19 @@
 import os.path
 import re
+import glob2
+
 
 
 from .settings import (MEDIA_CSS_LOCATION,
     MEDIA_JS_LOCATION, MEDIA_CSS_EXT, MEDIA_JS_EXT )
 
 #from mediagenerator import settings
-from mediagenerator.utils import find_file
+from mediagenerator.utils import find_file, get_media_dirs
 from mediagenerator.templatetags.media import MetaNode
 from django import template
 
 class CommentResolver(object):
-    resolve_re = re.compile(r"^ *(/?\*?/?)? *(@require (?P<d>['\"])(.*?)(?P=d))? *(/?\*?/?)$", re.M|re.U)
+    resolve_re = re.compile(r"^ *(/?\*?/?)? *(@require (?P<d>['\"])(.*?)(?P=d))? *(/?\*?/?).*$", re.M|re.U)
     _cache = {}
     def __init__(self, lang):
         self.lang = lang
@@ -28,11 +30,14 @@ class CommentResolver(object):
 
         with open(fname) as sf:
             content = sf.read()
+        
+        result = []
+        for r in self._resolve(content):
+            result += _find_files(os.path.split(fname)[0], r)
 
-        result = self._resolve(content)
         time = os.path.getmtime(fname)
         self._cache[fname] = result, time
-
+    
         return result
 
     def _resolve(self, source):
@@ -251,5 +256,28 @@ class Collector(object):
                 self.event(node)
         elif isinstance(arg, MetaNode):
             self.meta_found = True
+
+def _find_files(path_from, pattern):
+    
+    path_root = os.path.abspath(".")
+
+    if pattern.startswith("."):
+        search_prefix = path_from.replace(path_root, "").strip("/")
+        pattern = search_prefix + "/" + pattern
+    
+    found = []
+    for cdir in get_media_dirs():
+        if not os.path.isdir(cdir):
+            continue
+
+        os.chdir(cdir)
+        found = glob2.glob(pattern)
+        if found:
+            break
+
+    return [os.path.normpath(f) for f in found]
+    
+        
+
 
 collector = Collector()
