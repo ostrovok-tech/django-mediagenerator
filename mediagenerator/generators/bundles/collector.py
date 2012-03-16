@@ -161,11 +161,11 @@ class MediaBlock(object):
         resolver = CommentResolver(lang)
         while len(pool):
             current_deps = resolver.resolve(pool.pop(0))
-            for dep in current_deps:
+            for dep in reversed(current_deps):
                 dep_file = find_file(dep)
                 if dep_file and dep not in deps:
                     pool.append(dep_file)
-                    deps.append(dep)
+                    deps.insert(0, dep)
         return deps
 
 
