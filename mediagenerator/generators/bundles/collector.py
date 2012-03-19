@@ -1,11 +1,15 @@
 import os.path
 import re
 import glob2
+import hashlib
+import cPickle
 
 
 
 from .settings import (MEDIA_RELATIVE_RESOLVE, MEDIA_CSS_LOCATION,
-    MEDIA_JS_LOCATION, MEDIA_CSS_EXT, MEDIA_JS_EXT )
+    MEDIA_JS_LOCATION, MEDIA_CSS_EXT, MEDIA_JS_EXT, MEDIA_CACHE_DIR, MEDIA_CACHE_MODE )
+
+from django.conf import settings
 
 #from mediagenerator import settings
 from mediagenerator.utils import find_file, get_media_dirs
@@ -172,7 +176,81 @@ class MediaBlock(object):
                     deps.insert(0, dep)
         return deps
 
+class TmplFileCache(object):
+    location = MEDIA_CACHE_DIR
+    def __init__(self, tmpl_name):
+        self.tmpl_name = tmpl_name
+        self.cache_fname = None
+        self.md5 = None
 
+        if not os.path.isdir(self.location):
+            os.makedirs(self.location)
+
+    def check_result(self):
+        tmpl_name = self.tmpl_name
+        cache_fname = self.cache_fname = os.path.join(self.location, tmpl_name)
+        
+        tmpl_file = self.resolve_tmpl_file_name(tmpl_name)
+
+        if not tmpl_file:
+            return None, False
+
+        if not os.path.exists(cache_fname):
+            return None, False
+
+        with open(cache_fname, "r") as sf:
+            info = cPickle.load(sf)
+
+
+
+        if info["hash"] == self.get_hash(info["tmpls"]):
+            return info["result"], True
+        else:
+            return None, False
+
+    def store_result(self, tmpls, result):
+        if MEDIA_CACHE_MODE != 'rw':
+            return
+
+        cache_dir, fname = os.path.split(self.cache_fname)
+        if not os.path.isdir(cache_dir):
+            os.makedirs(cache_dir)
+
+        with open(self.cache_fname, "w") as sf:
+            cPickle.dump({
+                "hash" : self.get_hash(tmpls),
+                "result" : result,
+                "tmpls": sorted(set(tmpls))
+            }, sf)
+
+    def resolve_tmpl_file_name(self, tmpl_name):
+        for dir in settings.TEMPLATE_DIRS:
+            check_file = os.path.join(dir, tmpl_name)
+            if os.path.exists(check_file):
+                return check_file
+
+        return None
+        
+
+    def get_hash(self, tmpls):
+        if self.md5:
+            return self.md5
+
+        src = ""
+        
+        for tmpl_name in sorted(set(tmpls)):
+            tmpl_file = self.resolve_tmpl_file_name(tmpl_name)
+            if not tmpl_file:
+                src += "!no_file!"
+                continue
+
+            if os.path.exists(tmpl_file):
+                with open(tmpl_file, "r") as sf:
+                    src += sf.read()
+
+        self.md5 = hashlib.md5(src).digest()
+        return self.md5
+        
 class Collector(object):
 
     def __init__(self):
@@ -183,19 +261,38 @@ class Collector(object):
 
     def find_bundles(self, tmpl):
         if self.pool: return []
+        if not tmpl: return []
+
+        tmpl_name = tmpl
+        cache = TmplFileCache(tmpl_name)
+        result, in_cache = cache.check_result()
+        if in_cache:
+            return result
+
+        try:
+            tmpl = template.loader.get_template(tmpl)
+        except Exception, e:
+            print "Warning: Unable to parse template `%s`: %s" % (tmpl, repr(e))
+            cache.store_result([tmpl_name], (False, []))
+            return False, []
+
+
     
         self.root_name = tmpl.name
         self.pool = [[tmpl.name]]
         self.blocks = [self.pool[0]]
+        self.tmpls = [tmpl_name]
         for node in tmpl.nodelist:
             self.event(node)
 
         blocks = self.blocks
         meta_found = self.meta_found
+        tmpls = self.tmpls
         self.pool = None
         self.blocks = None
         self.root_name = None
         self.meta_found = False
+        self.tmpls = None
 
 
         res = []
@@ -206,6 +303,7 @@ class Collector(object):
         
         self.normilize_names(res)
 
+        cache.store_result(tmpls, (meta_found, res))
         return meta_found, res
 
     def normilize_names(self, blocks):
@@ -221,6 +319,7 @@ class Collector(object):
             
             try:
                 tmpl = template.loader.get_template(arg.parent_name)
+                self.tmpls.append(tmpl.name)
                 for node in arg.nodelist:
                     self.event(node)
                 
@@ -245,6 +344,7 @@ class Collector(object):
                 return
 
             self.pool[-1].append(arg.template.name)
+            self.tmpls.append(arg.template.name)
             for node in arg.template.nodelist:
                 self.event(node)
         elif isinstance(arg, template.defaulttags.IfNode):

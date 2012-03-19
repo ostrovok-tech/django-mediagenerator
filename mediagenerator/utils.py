@@ -212,12 +212,7 @@ def _walk_tmpl(conf, dirname, names):
 
 def _get_block_bundles(block_name):
     from mediagenerator.generators.bundles.collector import collector
-    try:
-        tmpl = template.loader.get_template(block_name)
-    except Exception, e:
-        print "Warning: Unable to parse template `%s`: %s" % (block_name, repr(e))
-        return []
-    meta_found, bundles = collector.find_bundles(tmpl)
+    meta_found, bundles = collector.find_bundles(block_name)
     if meta_found:
         return bundles
     else:
