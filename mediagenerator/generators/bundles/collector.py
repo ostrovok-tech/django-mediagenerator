@@ -267,7 +267,7 @@ class Collector(object):
         cache = TmplFileCache(tmpl_name)
         result, in_cache = cache.check_result()
         if not in_cache:
-            meta_found, blocks, tmpls = self._find_blocks(tmpl)
+            meta_found, blocks, tmpls = self._find_blocks(tmpl, cache)
             cache.store_result(tmpls, (meta_found, blocks))
         else:
             meta_found, blocks = result
@@ -282,14 +282,14 @@ class Collector(object):
 
         return meta_found, res
     
-    def _find_blocks(self, tmpl):
+    def _find_blocks(self, tmpl, cache):
         tmpl_name = tmpl
         try:
             tmpl = template.loader.get_template(tmpl)
         except Exception, e:
             print "Warning: Unable to parse template `%s`: %s" % (tmpl, repr(e))
             cache.store_result([tmpl_name], (False, []))
-            return False, []
+            return False, [], []
 
 
     
