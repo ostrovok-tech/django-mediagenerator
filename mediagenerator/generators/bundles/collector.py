@@ -236,7 +236,7 @@ class TmplFileCache(object):
         if self.md5:
             return self.md5
 
-        src = ""
+        src = "version_2"
         
         for tmpl_name in sorted(set(tmpls)):
             tmpl_file = self.resolve_tmpl_file_name(tmpl_name)
@@ -266,9 +266,24 @@ class Collector(object):
         tmpl_name = tmpl
         cache = TmplFileCache(tmpl_name)
         result, in_cache = cache.check_result()
-        if in_cache:
-            return result
+        if not in_cache:
+            meta_found, blocks, tmpls = self._find_blocks(tmpl)
+            cache.store_result(tmpls, (meta_found, blocks))
+        else:
+            meta_found, blocks = result
 
+        res = []
+        blocks = list(reversed(blocks))
+        uniques = set()
+        for b in blocks:
+            res += MediaBlock(b, uniques).get_bundles()
+        
+        self.normilize_names(res)
+
+        return meta_found, res
+    
+    def _find_blocks(self, tmpl):
+        tmpl_name = tmpl
         try:
             tmpl = template.loader.get_template(tmpl)
         except Exception, e:
@@ -294,17 +309,9 @@ class Collector(object):
         self.meta_found = False
         self.tmpls = None
 
+        return meta_found, blocks, tmpls
 
-        res = []
-        blocks = list(reversed(blocks))
-        uniques = set()
-        for b in blocks:
-            res += MediaBlock(b, uniques).get_bundles()
-        
-        self.normilize_names(res)
 
-        cache.store_result(tmpls, (meta_found, res))
-        return meta_found, res
 
     def normilize_names(self, blocks):
         for block in blocks:
