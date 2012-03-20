@@ -37,11 +37,11 @@ class CommentResolver(object):
          
         # for testing purposes
         if MEDIA_RELATIVE_RESOLVE:
-            result = self._resolve(content)
-        else:
             result = []
             for r in self._resolve(content):
                 result += _find_files(os.path.split(fname)[0], r)
+        else:
+            result = self._resolve(content)
 
         time = os.path.getmtime(fname)
         self._cache[fname] = result, time
@@ -236,7 +236,7 @@ class TmplFileCache(object):
         if self.md5:
             return self.md5
 
-        src = "version_2"
+        src = "version_3"
         
         for tmpl_name in sorted(set(tmpls)):
             tmpl_file = self.resolve_tmpl_file_name(tmpl_name)
@@ -282,13 +282,12 @@ class Collector(object):
 
         return meta_found, res
     
-    def _find_blocks(self, tmpl, cache):
+    def _find_blocks(self, tmpl):
         tmpl_name = tmpl
         try:
             tmpl = template.loader.get_template(tmpl)
         except Exception, e:
             print "Warning: Unable to parse template `%s`: %s" % (tmpl, repr(e))
-            cache.store_result([tmpl_name], (False, []))
             return False, [], []
 
 
