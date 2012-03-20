@@ -267,7 +267,7 @@ class Collector(object):
         cache = TmplFileCache(tmpl_name)
         result, in_cache = cache.check_result()
         if not in_cache:
-            meta_found, blocks, tmpls = self._find_blocks(tmpl, cache)
+            meta_found, blocks, tmpls = self._find_blocks(tmpl)
             cache.store_result(tmpls, (meta_found, blocks))
         else:
             meta_found, blocks = result
