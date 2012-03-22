@@ -17,7 +17,7 @@ from mediagenerator.templatetags.media import MetaNode
 from django import template
 
 class CommentResolver(object):
-    resolve_re = re.compile(r"^ *(/?\*?/?)? *(@require (?P<d>['\"])(.*?)(?P=d))? *(/?\*?/?).*$", re.M|re.U)
+    resolve_re = re.compile(r"@require (?P<d>['\"])(.*?)(?P=d)", re.M|re.U)
     _cache = {}
     def __init__(self, lang):
         self.lang = lang
@@ -49,28 +49,7 @@ class CommentResolver(object):
         return result
 
     def _resolve(self, source):
-        self.comment_start = False
-        self.result = []
-        self.resolve_re.sub(self._filter, source)
-        return self.result
-
-    def _filter(self, m):
-        if m.group(1) == "/*":
-            self.comment_start = True
-        
-        if self.lang == "js":
-            single_comment = m.group(1) == "//"
-        else:
-            single_comment = False
-
-        if (self.comment_start or single_comment) and m.group(4):
-            self.result.append(m.group(4))
-
-        if m.group(1) == "*/" or m.group(5) == "*/":
-            self.comment_start = False
-
-        return m.group(0)
-
+        return [ m.group(2) for m in self.resolve_re.finditer(source) ]
 
 class MediaBlock(object):
     re_js_req = re.compile('//@require (.*)', re.UNICODE)
@@ -252,6 +231,8 @@ class TmplFileCache(object):
         return self.md5
         
 class Collector(object):
+        
+    __resources__ = {}
 
     def __init__(self):
         self.pool = None
@@ -259,28 +240,96 @@ class Collector(object):
         self.meta_found = False
         self.root_name = None
 
-    def find_bundles(self, tmpl):
-        if self.pool: return []
-        if not tmpl: return []
 
-        tmpl_name = tmpl
-        cache = TmplFileCache(tmpl_name)
-        result, in_cache = cache.check_result()
-        if not in_cache:
-            meta_found, blocks, tmpls = self._find_blocks(tmpl)
-            cache.store_result(tmpls, (meta_found, blocks))
-        else:
-            meta_found, blocks = result
+    def find_bundles(self, tmpl_name):
+        
+        collection = self._find_collection(tmpl_name)
+        if not len(collection):
+            return False, []
 
+        #blocks = list(reversed(blocks))
         res = []
-        blocks = list(reversed(blocks))
         uniques = set()
-        for b in blocks:
+        for b in collection:
             res += MediaBlock(b, uniques).get_bundles()
         
         self.normilize_names(res)
 
-        return meta_found, res
+        return True, res
+
+    def _load_resource(self, name):
+        if name in self.__resources__:
+            return self.__resources__[name]
+
+        res = Resource(name)
+        self.__resources__[name] = res
+        return res
+
+    def _find_collection(self, tmpl_name):
+        resource = self._load_resource(tmpl_name)
+        content = resource.get_content()
+        pool = [resource]
+        parser = TemplateParser()
+        resources = [resource]
+        media_found = False
+        while 1:
+            parser.parse(content)
+            if not media_found and len(parser.media_meta):
+                media_found = True
+
+            if len(parser.extends):
+                res = self._load_resource(parser.extends[0])
+                resource.add_dep(res)
+                if res.is_exists():
+                    content = res.get_content()
+                    resources.insert(0, res)
+                    continue
+
+            break
+
+        #if not media_found:
+        #    raise IncompleteCollection("No media found for collection %s" % resource.name)
+        if not media_found:
+            return []
+
+        collection = []
+        for res in resources:
+            elem = [res.name]
+            collection.append(elem)
+            pool = [res]
+            skip_extends = True
+            while len(pool):
+                r = pool.pop(0)
+                if not r.is_exists():
+                    print "Warning: Resource does not exists: %s. From file: %s" % ( r.name, resource.get_abs_path() )
+                    continue
+
+                parser.parse(r.get_content())
+
+                if not skip_extends:
+                    for e in parser.extends:
+                        extend_res = resource.manager.load_resource(e)
+                        if extend_res.name in elem:
+                            continue
+
+                        pool.append(extend_res)
+                        elem.append(extend_res.name)
+                        resource.add_dep(extend_res)
+
+                for i in parser.includes:
+                    include_res = self._load_resource(i)
+                    if include_res.name in elem:
+                        continue
+
+                    pool.append(include_res)
+                    elem.append(include_res.name)
+                    resource.add_dep(include_res)
+
+                skip_exends = False
+
+
+
+        return collection
     
     def _find_blocks(self, tmpl):
         tmpl_name = tmpl
@@ -388,6 +437,183 @@ def _find_files(path_from, pattern):
     return [os.path.normpath(f) for f in found]
     
         
+class Resource(object):
+    class DoesNotExists(Exception):
+        pass
+
+    resource_type = "file"
+
+    def __init__(self, name):
+        self.name = name
+        self.filters = []
+        self.deps    = []
+
+    def is_exists(self):
+        #return bool(self.manager.locator.find_root_location(self.name))
+        return bool(self.get_root_location())
+
+    def get_content(self):
+        loc = self.get_abs_path()
+        with open(loc, "r") as sf:
+            content = sf.read()
+
+        return content
+
+    def get_root_location(self):
+        #root_location = self.manager.locator.find_root_location(self.name)
+        #if not root_location:
+        #    raise self.DoesNotExistsa
+        for path in settings.TEMPLATE_DIRS:
+            check = os.path.join(path, self.name)
+            if os.path.exists(check):
+                return path
+
+        return None
+
+    def get_cache_key(self):
+        return self.resource_type + "/" + self.name
+         
+    def get_abs_path(self):
+        if not self.get_root_location():
+            raise self.DoesNotExists(self.name)
+
+        return os.path.join(self.get_root_location(), self.name)
+
+    def get_extention(self):
+        try:
+            return self.name.rsplit(".", 1)[1] 
+        except IndexError:
+            return ""
+
+    def get_version(self, typ="mod"):
+        if typ == "mod":
+            return os.path.getmtime(self.get_abs_path())
+        else:
+            return hashlib.md5(self.get_content()).hexdigest()
+    
+    def get_filtered_content(self):
+        
+        is_cached, content = self.get_cached()
+        if is_cached:
+            return content
+
+        content = self.get_content()
+        for f in self.filters:
+            content = f.process(self, content)
+
+        self.set_cached(content)
+        return content
+
+    def add_dep(self, dep):
+        if dep not in self.deps:
+            self.deps.append(dep)
+
+    def add_filter(self, filter):
+        self.filters.append(filter)
+
+    def get_cached(self):
+        return False, None
+        key = self.get_cache_key()
+        bad_result = False, None
+        if not self.manager.cache.exists(key):
+            return bad_result
+
+        data = self.manager.cache.get(key)
+        good_result = True, data["content"]
+
+        filter_names = [f.name for f in self.filters]
+        if data["filters"] != filter_names:
+            return bad_result
+
+        if "version" not in data:
+            return good_result
+
+        version_mod, version_hash = data["version"]
+        if version_mod == self.get_version("mod") or version_hash == self.get_version("hash"):
+            if self._check_deps_version(data["deps"]):
+                return good_result
+
+        return bad_result
+
+    def _check_deps_version(self, deps):
+        new_deps = []
+        for rtype, rname, rexists, vmod, vhash in deps:
+            res = find_manager(rtype).load_resource(rname)
+            if rexists != res.is_exists():
+                return False
+
+            if rexists and vmod != res.get_version("mod") and vhash != res.get_version("hash"):
+                return False
+
+            new_deps.append(res)
+
+        self.deps = new_deps
+        return True
+
+    def set_cached(self, content):
+        return
+        deps = []
+        for r in self.deps:
+            if r.is_exists():
+                version_mod = r.get_version("mod")
+                version_hash = r.get_version("hash")
+            else:
+                version_mod = None
+                version_hash = False
+            deps.append((r.resource_type, r.name, r.is_exists(), version_mod, version_hash))
+
+        data = {
+            "filters": [f.name for f in self.filters],
+            "version": [self.get_version("mod"), self.get_version("hash")],
+            "content": content,
+            "deps"   : deps
+        }
+        self.manager.cache.set(self.get_cache_key(), data)
+
+    def __repr__(self):
+        return "<%s: '%s'>" % ( self.__class__.__name__, self.name )
+
+
+class TemplateParser(object):
+    
+    re_tags = re.compile(r'{%\s*(comment|endcomment|extends|include|media_meta)\s*(.*?)\s*%}')
+    re_tmplname = re.compile(r"(?P<d>['\"])(.*?)(?P=d)")
+
+    def parse(self, content):
+        self.includes = []
+        self.extends = []
+        self.media_meta = []
+        self.in_comment = False
+        self.re_tags.sub(self._parse, content)
+
+    def _parse(self, match):
+        if match.group(1) == "comment":
+            self.in_comment = True
+        elif match.group(1) == "endcomment":
+            self.in_comment = False
+        elif self.in_comment:
+            return
+        elif match.group(1) == "extends":
+            tmpl_name = self._find_tmpl_name(match.group(2))
+            if tmpl_name:
+                self.extends.append(tmpl_name)
+        elif match.group(1) == "include":
+            tmpl_name = self._find_tmpl_name(match.group(2))
+            if tmpl_name:
+                self.includes.append(tmpl_name)
+        elif match.group(1) == "media_meta":
+            self.media_meta.append(match.group(2))
+
+    def _find_tmpl_name(self, string):
+        if not (string.startswith("'") or string.startswith('"')):
+            #print "Unable to determinte template name: dynamic names resolving not supported"
+            return None
+
+        match = self.re_tmplname.match(string)
+        return match.group(2)
+
+    def parse_includes(self, match):
+        self.includes.append(match.group(1))
 
 
 collector = Collector()
