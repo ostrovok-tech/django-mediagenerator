@@ -306,9 +306,12 @@ class Collector(object):
 
                 parser.parse(r.get_content())
 
-                if not skip_extends:
+                if skip_extends:
+                    if len(parser.extends):
+                        skip_extends = False
+                else:
                     for e in parser.extends:
-                        extend_res = resource.manager.load_resource(e)
+                        extend_res = self._load_resource(e)
                         if extend_res.name in elem:
                             continue
 
@@ -324,8 +327,6 @@ class Collector(object):
                     pool.append(include_res)
                     elem.append(include_res.name)
                     resource.add_dep(include_res)
-
-                skip_exends = False
 
 
 
