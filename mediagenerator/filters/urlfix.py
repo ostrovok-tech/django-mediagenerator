@@ -41,6 +41,8 @@ class UrlRerwiter(object):
 
         if name.endswith(".css"):
             self.type = "css"
+        elif name.endswith(".scss"):
+            self.type = "css"
         elif name.endswith(".js"):
             self.type = "js"
         else:

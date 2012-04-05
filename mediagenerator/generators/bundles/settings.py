@@ -13,6 +13,7 @@ DEFAULT_MEDIA_FILTERS = getattr(settings, 'DEFAULT_MEDIA_FILTERS', {
     'sass': 'mediagenerator.filters.sass.Sass',
     'scss': (
         'mediagenerator.filters.cssimport.CssImport',
+        'mediagenerator.filters.urlfix.UrlFixFilter',
         'mediagenerator.filters.sprite.CSSSprite',
         'mediagenerator.filters.scssfilter.ScssFilter',
     ),
