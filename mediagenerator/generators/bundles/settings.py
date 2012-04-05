@@ -4,7 +4,7 @@ DEFAULT_MEDIA_FILTERS = getattr(settings, 'DEFAULT_MEDIA_FILTERS', {
     'ccss': 'mediagenerator.filters.clever.CleverCSS',
     'coffee': 'mediagenerator.filters.coffeescript.CoffeeScript',
     'css': (
-        'mediagenerator.filters.cssurl.CSSURLFileFilter',
+        'mediagenerator.filters.urlfix.UrlFixFilter',
         'mediagenerator.filters.sprite.CSSSprite',
     ),
     'html': 'mediagenerator.filters.template.Template',
@@ -18,7 +18,8 @@ DEFAULT_MEDIA_FILTERS = getattr(settings, 'DEFAULT_MEDIA_FILTERS', {
     ),
     'less': 'mediagenerator.filters.less.Less',
     'sprite': 'mediagenerator.filters.sprite.Sprite',
-    'jst': 'mediagenerator.filters.jstemplate.JSTFilter'
+    'jst': 'mediagenerator.filters.jstemplate.JSTFilter',
+    'js': 'mediagenerator.filters.urlfix.UrlFixFilter'
 })
 
 
@@ -30,7 +31,7 @@ ROOT_MEDIA_FILTERS = getattr(settings, 'ROOT_MEDIA_FILTERS', {})
 # to configure YUICompressor or Closure.
 BASE_ROOT_MEDIA_FILTERS = getattr(settings, 'BASE_ROOT_MEDIA_FILTERS', {
     '*': 'mediagenerator.filters.concat.Concat',
-    'css': 'mediagenerator.filters.cssurl.CSSURL',
+    #'css': 'mediagenerator.filters.cssurl.CSSURL',
 })
 
 MEDIA_BUNDLES = getattr(settings, 'MEDIA_BUNDLES', [])
