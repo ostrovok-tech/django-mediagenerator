@@ -208,6 +208,7 @@ class SpriteBuilder(object):
         else:
             tmpfilename = "../%s.png" % self.collection
             cmd = ["convert", "-identify", "-strip", "-append", "*.png", tmpfilename ]
+
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         proc.wait()
         if proc.returncode != 0:
@@ -240,7 +241,7 @@ class SpriteBuilder(object):
         if self.debug:
             self._dbg_images_cache[self.name] = result, os.path.getmtime(self.root)
         else:
-            self._pub_generated_file[self.name] = result
+            self._pub_images_cache[self.name] = result
 
         return generated_filename, result
 
