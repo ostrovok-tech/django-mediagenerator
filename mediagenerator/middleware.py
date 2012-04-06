@@ -40,7 +40,7 @@ class MediaMiddleware(object):
 
         # We refresh the dev names only once for the whole request, so all
         # media_url() calls are cached.
-        _refresh_dev_names()
+        # _refresh_dev_names()
 
         if not request.path.startswith(DEV_MEDIA_URL):
             return
