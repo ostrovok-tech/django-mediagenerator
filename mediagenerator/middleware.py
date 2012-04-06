@@ -43,6 +43,7 @@ class MediaMiddleware(object):
         # _refresh_dev_names()
 
         if not request.path.startswith(DEV_MEDIA_URL):
+            _refresh_dev_names()
             return
 
         filename = request.path[len(DEV_MEDIA_URL):]
