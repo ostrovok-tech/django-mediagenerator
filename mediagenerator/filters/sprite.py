@@ -210,9 +210,9 @@ class SpriteBuilder(object):
             cmd = ["convert", "-identify", "-strip", "-append", "*.png", tmpfilename ]
 
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        proc.wait()
+        procout, procerr = proc.communicate()
         if proc.returncode != 0:
-            raise Exception("Unable to join sprites or get info: %s" % proc.stdout.read())
+            raise Exception("Unable to join sprites or get info: %s" % procout)
 
         if not self.debug:
             with open(tmpfilename, "r") as sf:
@@ -231,7 +231,7 @@ class SpriteBuilder(object):
         os.chdir(return_path)
         last_img = None
         result = []
-        for imginfo in proc.stdout.read().split("\n"):
+        for imginfo in procout.split("\n"):
             img = ImgInfo.from_string(imginfo)
             if img:
                 img.calc_offset(last_img)
