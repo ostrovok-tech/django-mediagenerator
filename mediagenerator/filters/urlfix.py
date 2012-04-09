@@ -86,7 +86,11 @@ class UrlRerwiter(object):
 
         if not os.path.exists(os.path.join(self.root, rebased)):
             print "Check path", os.path.join(self.root, rebased), rebased
-            raise Exception("Unable to find url `%s` from file %s" % ( url, self.name) )
+            raise Exception("Unable to find url `%s` from file %s. File does not exists: %s" % (
+                url, 
+                self.name,
+                os.path.join(self.root, rebased)
+            ))
 
         if appsettings.MEDIA_DEV_MODE:
             prefix = appsettings.DEV_MEDIA_URL
