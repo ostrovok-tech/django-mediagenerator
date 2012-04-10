@@ -143,16 +143,16 @@ class MediaBlock(object):
 
 
     def _find_deps(self, name, lang):
-        pool = [name]
-        deps = []
         resolver = CommentResolver(lang)
-        while len(pool):
-            current_deps = resolver.resolve(pool.pop(0))
-            for dep in reversed(current_deps):
-                dep_file = find_file(dep)
-                if dep_file and dep not in deps:
-                    pool.append(dep_file)
-                    deps.insert(0, dep)
+        deps = []
+        for dep in resolver.resolve(name):
+            dep_file = find_file(dep)
+            if not dep_file:
+                continue
+
+            deps += self._find_deps(dep_file, lang)
+            deps.append(dep)
+
         return deps
 
 class TmplFileCache(object):
