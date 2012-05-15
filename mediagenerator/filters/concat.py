@@ -13,7 +13,7 @@ class Concat(Filter):
         super(Concat, self).__init__(**kwargs)
 
     def get_output(self, variation):
-        yield '\n\n'.join(input for input in self.get_input(variation))
+        yield '\n\n'.join(smart_str(input) for input in self.get_input(variation))
 
     def get_dev_output(self, name, variation):
         if not self.concat_dev_output:
