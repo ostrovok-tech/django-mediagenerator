@@ -36,7 +36,7 @@ class UrlRerwiter(object):
     def __init__(self, name):
         self.name = name
         self.type = type
-        self.root = settings.MEDIA_ROOT
+        self.roots = settings.STATICFILES_DIRS
         self.base = os.path.dirname(name)
 
         if name.endswith(".css"):
@@ -84,21 +84,22 @@ class UrlRerwiter(object):
 
 
 
-        if not os.path.exists(os.path.join(self.root, rebased)):
-            print "Check path", os.path.join(self.root, rebased), rebased
+        try:
+            root = next(root for root in self.roots if os.path.exists(os.path.join(root, rebased)))
+        except StopIteration:
             raise Exception("Unable to find url `%s` from file %s. File does not exists: %s" % (
                 url, 
                 self.name,
-                os.path.join(self.root, rebased)
+                rebased
             ))
 
         if appsettings.MEDIA_DEV_MODE:
             prefix = appsettings.DEV_MEDIA_URL
-            version = os.path.getmtime(os.path.join(self.root, rebased))
+            version = os.path.getmtime(os.path.join(root, rebased))
             rebased += "?v=%s" % version
         else:
             prefix = appsettings.PRODUCTION_MEDIA_URL
-            with open(os.path.join(self.root, rebased)) as sf:
+            with open(os.path.join(root, rebased)) as sf:
                 version = sha1(sf.read()).hexdigest()
 
             rebased_prefix, rebased_extention = rebased.rsplit(".", 1)
