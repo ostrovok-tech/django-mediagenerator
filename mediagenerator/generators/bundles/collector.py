@@ -7,12 +7,12 @@ import cPickle
 
 
 from .settings import (MEDIA_RELATIVE_RESOLVE, MEDIA_CSS_LOCATION,
-    MEDIA_JS_LOCATION, MEDIA_CSS_EXT, MEDIA_JS_EXT, MEDIA_CACHE_DIR, MEDIA_CACHE_MODE )
+    MEDIA_JS_LOCATION, MEDIA_CSS_EXT, MEDIA_JS_EXT, MEDIA_CACHE_DIR )
 
 from django.conf import settings
 
 #from mediagenerator import settings
-from mediagenerator.utils import find_file, get_media_dirs
+from mediagenerator.utils import find_file, get_media_dirs, atomic_store
 from mediagenerator.templatetags.media import MetaNode
 from django import template
 
@@ -188,19 +188,18 @@ class TmplFileCache(object):
             return None, False
 
     def store_result(self, tmpls, result):
-        if MEDIA_CACHE_MODE != 'rw':
-            return
-
         cache_dir, fname = os.path.split(self.cache_fname)
         if not os.path.isdir(cache_dir):
             os.makedirs(cache_dir)
 
-        with open(self.cache_fname, "w") as sf:
-            cPickle.dump({
+        atomic_store(
+            self.cache_fname,
+            cPickle.dumps({
                 "hash" : self.get_hash(tmpls),
                 "result" : result,
                 "tmpls": sorted(set(tmpls))
-            }, sf)
+            })
+        )
 
     def resolve_tmpl_file_name(self, tmpl_name):
         for dir in settings.TEMPLATE_DIRS:

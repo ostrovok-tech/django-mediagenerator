@@ -217,3 +217,8 @@ def _get_block_bundles(block_name):
         return bundles
     else:
         return []
+
+def atomic_store(path, content):
+    tmp = path + '.' + str(os.getpid())
+    open(tmp, 'w').write(content)
+    os.rename(tmp, path)
