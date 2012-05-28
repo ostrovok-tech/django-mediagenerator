@@ -36,7 +36,11 @@ class UrlRerwiter(object):
     def __init__(self, name):
         self.name = name
         self.type = type
-        self.roots = settings.STATICFILES_DIRS
+        self.roots = list(getattr(settings, 'STATICFILES_DIRS', []))
+        media_root = getattr(settings, 'MEDIA_ROOT', None)
+        if media_root and media_root not in self.roots:
+            self.roots.append(media_root)
+
         self.base = os.path.dirname(name)
 
         if name.endswith(".css"):
