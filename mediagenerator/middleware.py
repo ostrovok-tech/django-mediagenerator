@@ -1,3 +1,4 @@
+import threading
 from .settings import DEV_MEDIA_URL, MEDIA_DEV_MODE
 # Only load other dependencies if they're needed
 if MEDIA_DEV_MODE:
@@ -24,10 +25,18 @@ class MediaMiddleware(object):
     """
 
     MAX_AGE = 60 * 60 * 24 * 365
+    lock = threading.Lock()
 
     def process_request(self, request):
         if not MEDIA_DEV_MODE:
             return
+
+        self.lock.acquire()
+        result = self._process_request(request)
+        self.lock.release()
+        return result
+
+    def _process_request(self, request):
         
         #  We won't to refresh dev names for static requests.
         #  So once static content generated it becomes cached

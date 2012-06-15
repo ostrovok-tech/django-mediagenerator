@@ -3,7 +3,6 @@ from scss import Scss
 
 from mediagenerator.generators.bundles.base import FileFilter
 
-compiler = Scss()
 
 class ScssFilter(FileFilter):
     
@@ -14,6 +13,7 @@ class ScssFilter(FileFilter):
             'The parent filter expects "%s".' % self.filetype)
     
     def get_dev_output(self, name, variation, content=None):
+        compiler = Scss()
         
         # here we support piped output
         if not content:
