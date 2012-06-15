@@ -30,10 +30,12 @@ class MediaMiddleware(object):
     def process_request(self, request):
         if not MEDIA_DEV_MODE:
             return
+        try:
+            self.lock.acquire()
+            result = self._process_request(request)
+        finally:
+            self.lock.release()
 
-        self.lock.acquire()
-        result = self._process_request(request)
-        self.lock.release()
         return result
 
     def _process_request(self, request):

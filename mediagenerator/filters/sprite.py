@@ -91,6 +91,7 @@ class SpriteBuilder(object):
             /home/username/djangoprogect/_generate_media/img/sprite/icons-XXXXXXXXXXXX.png
         self.images => info about found images
     """
+    tmpfiles = []
     def __init__(self, name):
         self.css = []
         self.debug = settings.MEDIA_DEV_MODE
