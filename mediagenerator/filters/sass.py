@@ -52,7 +52,7 @@ class Sass(Filter):
         self._regenerate(debug=False)
         yield self._compiled
 
-    def get_dev_output(self, name, variation):
+    def get_dev_output(self, name, variation, content=None):
         assert name == self.main_module
         self._regenerate(debug=True)
         return self._compiled
@@ -92,6 +92,20 @@ class Sass(Filter):
                 "you have installed Sass (http://sass-lang.com) and "
                 "Compass (http://compass-style.org).\n"
                 "Error was: %s" % e)
+
+    def get_last_modified(self):
+        if self._dependencies:
+            last_mod = 0
+            for mtime in self._dependencies.values():
+                if mtime > last_mod:
+                    last_mod = mtime
+
+            return last_mod
+
+        return 0
+
+
+
 
     def _regenerate(self, debug=False):
         if self._dependencies:

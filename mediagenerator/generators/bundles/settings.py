@@ -10,7 +10,10 @@ DEFAULT_MEDIA_FILTERS = getattr(settings, 'DEFAULT_MEDIA_FILTERS', {
     'html': 'mediagenerator.filters.template.Template',
     'py': 'mediagenerator.filters.pyjs_filter.Pyjs',
     'pyva': 'mediagenerator.filters.pyvascript_filter.PyvaScript',
-    'sass': 'mediagenerator.filters.sass.Sass',
+    'sass': (
+        'mediagenerator.filters.sass.Sass',
+        'mediagenerator.filters.urlfix.UrlFixFilter',
+    ),
     'scss': (
         'mediagenerator.filters.cssimport.CssImport',
         'mediagenerator.filters.urlfix.UrlFixFilter',
