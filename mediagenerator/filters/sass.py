@@ -64,7 +64,7 @@ class Sass(Filter):
     def _compile(self, debug=False):
         extensions = os.path.join(os.path.dirname(__file__), 'sass_compass.rb')
         extensions = extensions.replace('\\', '/')
-        run = ['sass', '-C', '-t', 'expanded',
+        run = ['sass', '--scss', '-C', '-t', 'expanded',
                '--require', extensions]
         for framework in SASS_FRAMEWORKS:
             # Some frameworks are loaded by default
@@ -95,17 +95,8 @@ class Sass(Filter):
 
     def get_last_modified(self):
         if self._dependencies:
-            last_mod = 0
-            for mtime in self._dependencies.values():
-                if mtime > last_mod:
-                    last_mod = mtime
-
-            return last_mod
-
+            return max(0, *self._dependencies.values())
         return 0
-
-
-
 
     def _regenerate(self, debug=False):
         if self._dependencies:
