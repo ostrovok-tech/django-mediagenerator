@@ -11,13 +11,13 @@ class CssImport(FileFilter):
     COMMENT = re.compile(r"/\*.*?\*/")
     LINE_COMMENT = re.compile("//.*?\n")
 
-    scss_file = None
-
     def __init__(self, **kwargs):
         super(CssImport, self).__init__(**kwargs)
         assert self.filetype == 'css', (
             'CSSSprite only supports CSS output. '
             'The parent filter expects "%s".' % self.filetype)
+
+        self.scss_files = None
     
     def get_dev_output(self, name, variation, content=None):
         if not content:

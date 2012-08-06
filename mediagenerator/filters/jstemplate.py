@@ -1,6 +1,8 @@
 import os.path
 import re
 
+from django.utils.encoding import smart_unicode
+
 from mediagenerator.utils import find_file
 from mediagenerator.generators.bundles.base import FileFilter
 
@@ -50,7 +52,7 @@ class JSTFilter(FileFilter):
             raise IOError("File not found: '%s'" % name)
 
         with open(fname, 'r') as f:
-            return f.read()
+            return smart_unicode(f.read())
 
     def get_dev_output(self, name, variation, content=None):
         if not content:
