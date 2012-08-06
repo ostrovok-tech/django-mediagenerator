@@ -7,7 +7,12 @@ from mediagenerator.utils import find_file
 
 class CssImport(FileFilter):
     
-    rewrite_re = re.compile("@import \s*[\"'](.*?)['\"]\s*;?", re.UNICODE)
+    IMPORT = re.compile(r"@import \s*(?P<d>['\"])(.*?)(?P=d)\s*;", re.M|re.U)
+    COMMENT = re.compile(r"/\*.*?\*/")
+    LINE_COMMENT = re.compile("//.*?\n")
+
+    scss_file = None
+
     def __init__(self, **kwargs):
         super(CssImport, self).__init__(**kwargs)
         assert self.filetype == 'css', (
@@ -18,37 +23,55 @@ class CssImport(FileFilter):
         if not content:
             content = super(CssImport, self).get_dev_output(name, variation)
 
-        return self.rewrite_re.sub(self.make_imports, content)
-
-    def make_imports(self, match):
-        fname = find_file(match.group(1))
-        if not fname:
-            lineno = match.string.count('\n', 0, match.start())
-            print "[%s:%d] Can't find file `%s`" % (self.name, lineno, match.group(1))
-            return ""
-
-        try:
-            with open(fname, 'r') as sf: content = sf.read()
-        except IOError, e:
-            lineno = match.string.count('\n', 0, match.start())
-            info = self.name, lineno, fname, e
-            print "[%s:%d] Can't import file `%s`: %s" % info
-            return ""
+        while self.IMPORT.search(content):
+            content = self.COMMENT.sub("", content)
+            content = self.LINE_COMMENT.sub("", content)
+            content = self.IMPORT.sub(lambda m: self._read_import(m.group(2)), content)
+        
         
         return content
 
-    def get_last_modified(self):
-        content = super(CssImport, self).get_dev_output(self.name, {})
-        files = []
-        self.rewrite_re.sub(lambda m: files.append(m.group(1)), content)
-        lm = 0
-        for f in files:
-            fname = find_file(f)
-            if not fname: return time.time()
-            fmod = os.path.getmtime(fname)
-            if fmod > lm: lm = fmod
-
-        return lm
+    def _read_import(self, name):
+        file_name = find_file(name)
+        if not file_name:
+            raise IOError("File not found: '%s'" % name)
         
-    
+        with open(file_name, 'r') as f:
+            return f.read()
+
+    def _collect_scss_files(self):
+        files = {}
+        pool = [self.name]
+        last_modified = 0
+        while len(pool):
+            item = pool.pop(0)
+            try:
+                content = self._read_import(item)
+            except IOError:
+                return None
+
+            for quote, include in self.IMPORT.findall(content):
+                fname = include.strip(' \n\t')
+                pool.append(fname)
+                fname = find_file(fname)
+                if not fname:
+                    return None
+
+                files[fname] = os.path.getmtime(fname)
+
+        return files
+
+    def get_last_modified(self):
+        if not self.scss_files:
+            self.scss_files = self._collect_scss_files()
+            if not self.scss_files:
+                return 0
+
+        for f, modified in self.scss_files.items():
+            if os.path.getmtime(f) != modified:
+                self.scss_files = self._collect_scss_files()
+                if not self.scss_files:
+                    return 0
+
+        return max([0] + self.scss_files.values())
 

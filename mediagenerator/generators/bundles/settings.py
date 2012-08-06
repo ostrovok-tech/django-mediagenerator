@@ -20,11 +20,19 @@ DEFAULT_MEDIA_FILTERS = getattr(settings, 'DEFAULT_MEDIA_FILTERS', {
         'mediagenerator.filters.sprite.CSSSprite',
         'mediagenerator.filters.scssfilter.ScssFilter',
     ),
+    'scss2': (
+        'mediagenerator.filters.cssimport.CssImport',
+        'mediagenerator.filters.urlfix.UrlFixFilter',
+        'mediagenerator.filters.sprite.CSSSprite',
+        'mediagenerator.filters.scss2.ScssFilter',
+    ),
     'less': 'mediagenerator.filters.less.Less',
     'sprite': 'mediagenerator.filters.sprite.Sprite',
     'jst': 'mediagenerator.filters.jstemplate.JSTFilter',
     'js': 'mediagenerator.filters.urlfix.UrlFixFilter'
 })
+if getattr(settings, 'MEDIA_USE_RUBY_SCSS', False):
+    DEFAULT_MEDIA_FILTERS['scss'] = DEFAULT_MEDIA_FILTERS['scss2']
 
 
 ROOT_MEDIA_FILTERS = getattr(settings, 'ROOT_MEDIA_FILTERS', {})
