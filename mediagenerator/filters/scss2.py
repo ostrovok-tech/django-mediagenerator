@@ -15,8 +15,9 @@ class ScssFilter(FileFilter):
     def get_dev_output(self, name, variation, content=None):
         if not content:
             content = super(ScssFilter, self).get_dev_output(name, variation)
-
+        
         command = ['scss', '--stdin', '--style=expanded', '-q']
+        print "Executing %s" % " ".join(command)
         pipe = Popen(command, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         stdout, stderr = pipe.communicate(smart_str(content))
         if stderr:
