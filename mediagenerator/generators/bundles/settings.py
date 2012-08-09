@@ -28,7 +28,11 @@ DEFAULT_MEDIA_FILTERS = getattr(settings, 'DEFAULT_MEDIA_FILTERS', {
     ),
     'less': 'mediagenerator.filters.less.Less',
     'sprite': 'mediagenerator.filters.sprite.Sprite',
-    'jst': 'mediagenerator.filters.jstemplate.JSTFilter',
+    'jst': (
+        'mediagenerator.filters.urlfix.UrlFixFilter',
+        'mediagenerator.filters.jstemplate.JSTFilter',
+    ),
+
     'js': 'mediagenerator.filters.urlfix.UrlFixFilter'
 })
 if getattr(settings, 'MEDIA_USE_RUBY_SCSS', False):

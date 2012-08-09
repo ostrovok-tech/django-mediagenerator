@@ -31,7 +31,7 @@ class UrlFixFilter(FileFilter):
 class UrlRerwiter(object):
     
     re_css = re.compile(r'url\s*\((?P<d>["\'])?(?P<url>.*?)(?P=d)?\)', re.UNICODE)
-    re_js  = re.compile(r'OTA\.url\s*\((?P<d>["\'])(?P<url>.*?)(?P=d)\)', re.UNICODE)
+    re_js  = re.compile(r'(MEDIA|OTA)\.url\s*\((?P<d>["\'])(?P<url>.*?)(?P=d)\)', re.UNICODE)
     
     def __init__(self, name):
         self.name = name
@@ -50,6 +50,8 @@ class UrlRerwiter(object):
         elif name.endswith(".sass"):
             self.type = "css"
         elif name.endswith(".js"):
+            self.type = "js"
+        elif name.endswith(".jst"):
             self.type = "js"
         else:
             raise Exception("Unsupported filetype for UrlFixFilter: %s" % name)
