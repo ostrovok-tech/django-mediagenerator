@@ -6,9 +6,11 @@ from shutil import rmtree, copyfile
 from subprocess import check_call
 import hashlib
 
+from django.core.management.base import NoArgsCommand
+from django.utils.importlib import import_module
+
 from ... import settings
 from ...api import generate_media, prepare_media
-from django.core.management.base import NoArgsCommand
 
 CACHE_DIR = '/tmp/yuibatch/'
 
@@ -30,7 +32,7 @@ class Command(NoArgsCommand):
 
     def handle_noargs(self, **options):
         try:
-            from _generated_media_names import NAMES
+            NAMES = import_module(settings.GENERATED_MEDIA_NAMES_MODULE).NAMES
         except ImportError:
             print "Nothing to compress, run ./manage.py generatemedia first"
             return

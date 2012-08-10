@@ -5,6 +5,7 @@ from hashlib import sha1
 
 from django.conf import settings
 
+from mediagenerator.utils import media_urls
 from mediagenerator import settings as appsettings
 from mediagenerator.generators.bundles.base import FileFilter
 
@@ -31,7 +32,7 @@ class UrlFixFilter(FileFilter):
 class UrlRerwiter(object):
     
     re_css = re.compile(r'url\s*\((?P<d>["\'])?(?P<url>.*?)(?P=d)?\)', re.UNICODE)
-    re_js  = re.compile(r'(MEDIA|OTA)\.url\s*\((?P<d>["\'])(?P<url>.*?)(?P=d)\)', re.UNICODE)
+    re_js  = re.compile(r'(MEDIA|OTA)\.(?P<type>url|import)\s*\((?P<d>["\'])(?P<url>.*?)(?P=d)\)', re.UNICODE)
     
     def __init__(self, name):
         self.name = name
@@ -71,10 +72,14 @@ class UrlRerwiter(object):
 
     def _rewrite_js(self, match):
         url = match.group('url')
-        if url.startswith('//'):
-            return "'%s'" % url
+        typ = match.group('type')
 
-        return "'%s'" % self._rebase(url)
+        if typ == 'url':
+            if url.startswith('//'):
+                return "'%s'" % url
+            return "'%s'" % self._rebase(url)
+        elif typ == 'import':
+            return '\n'.join(['importScripts("%s");' % src for src in media_urls(url)])
 
     def _rebase(self, url):
 
