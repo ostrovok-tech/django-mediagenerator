@@ -31,6 +31,7 @@ DEFAULT_MEDIA_FILTERS = getattr(settings, 'DEFAULT_MEDIA_FILTERS', {
     'jst': (
         'mediagenerator.filters.urlfix.UrlFixFilter',
         'mediagenerator.filters.jstemplate.JSTFilter',
+        'mediagenerator.filters.jsbeautify.JSBeautify',
     ),
 
     'js': 'mediagenerator.filters.urlfix.UrlFixFilter'

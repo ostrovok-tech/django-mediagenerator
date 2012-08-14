@@ -18,6 +18,9 @@ class CoffeeScript(Filter):
         self._compiled = None
         self._compiled_hash = None
         self._mtime = None
+        if not find_file(self.module):
+            raise RuntimeError('File not found: %s' % self.module)
+        
 
     @classmethod
     def from_default(cls, name):
