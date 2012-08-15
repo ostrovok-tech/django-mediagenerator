@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.utils.encoding import smart_str
 from hashlib import sha1
 from mediagenerator.generators.bundles.base import Filter
@@ -5,9 +6,11 @@ from mediagenerator.utils import find_file, read_text_file
 from subprocess import Popen, PIPE
 import os
 import sys
+import re
 
 class CoffeeScript(Filter):
     takes_input = False
+    RE_DONTWRAP = re.compile(r'-\*-\s*wrap\s*:\s*disabled\s*-\*-')
 
     def __init__(self, **kwargs):
         self.config(kwargs, module=None)
@@ -51,6 +54,7 @@ class CoffeeScript(Filter):
 
     def _compile(self, input, debug=False):
         try:
+            
             shell = sys.platform == 'win32'
             cmd = Popen(['coffee', '--compile', '--print', '--stdio', '--bare'],
                         stdin=PIPE, stdout=PIPE, stderr=PIPE,
@@ -58,7 +62,12 @@ class CoffeeScript(Filter):
             output, error = cmd.communicate(smart_str(input))
             assert cmd.wait() == 0, ('CoffeeScript command returned bad '
                                      'result:\n%s' % error)
-            return output.decode('utf-8')
+            resp = output.decode('utf-8')
+            wrapper = getattr(settings, 'MEDIA_COFFEE_WRAPPER', None)
+            if wrapper and not self.RE_DONTWRAP.search(input):
+                resp = wrapper % resp
+
+            return resp
         except Exception, e:
             raise ValueError("Failed to run CoffeeScript compiler for this "
                 "file. Please confirm that the \"coffee\" application is "
