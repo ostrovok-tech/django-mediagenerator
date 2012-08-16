@@ -1,6 +1,7 @@
 import os.path
 import re
 
+from django.conf import settings
 from django.utils.encoding import smart_unicode
 
 from mediagenerator.utils import find_file
@@ -35,10 +36,14 @@ class JSTFilter(FileFilter):
         plain = self.escape.sub(lambda m: "',__esc(" + self.unescape(m.group(1)) + "),'", plain)
         plain = self.interpolate.sub(lambda m: "', " + self.unescape(m.group(1)) + ",'", plain)
         plain = self.evaluate.sub(lambda m: "');" + self.evaluatesub.sub(" ", self.unescape(m.group(1))) + ";__p.push('", plain)
-        
-        plain = plain.replace("\n", "\\n")
-        plain = plain.replace("\r", "\\r")
+       
         plain = plain.replace("\t", "\\t")
+        if getattr(settings, 'MEDIA_JST_DROP_NEWLINES', False):
+            plain = plain.replace("\n", "")
+            plain = plain.replace("\r", "")
+        else:
+            plain = plain.replace("\n", "\\n")
+            plain = plain.replace("\r", "\\r")
 
         footer  = "');}return __p.join('');}};";
 
