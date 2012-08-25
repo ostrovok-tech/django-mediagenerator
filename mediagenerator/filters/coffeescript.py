@@ -69,8 +69,8 @@ class CoffeeScript(Filter):
 
             return resp
         except Exception, e:
-            raise ValueError("Failed to run CoffeeScript compiler for this "
+            raise ValueError("Failed to run CoffeeScript compiler for %s "
                 "file. Please confirm that the \"coffee\" application is "
                 "on your path and that you can run it from your own command "
                 "line.\n"
-                "Error was: %s" % e)
+                "Error was: %s" % (self.module, e))
