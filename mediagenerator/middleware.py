@@ -26,6 +26,7 @@ class MediaMiddleware(object):
 
     MAX_AGE = 60 * 60 * 24 * 365
     lock = threading.Lock()
+    names_generated = False
 
     def process_request(self, request):
         if not MEDIA_DEV_MODE:
@@ -53,8 +54,11 @@ class MediaMiddleware(object):
         # media_url() calls are cached.
         # _refresh_dev_names()
 
-        if not request.path.startswith(DEV_MEDIA_URL):
+        if not self.names_generated:
             _refresh_dev_names()
+            self.names_generated = True
+        
+        if not request.path.startswith(DEV_MEDIA_URL):
             return
 
         filename = request.path[len(DEV_MEDIA_URL):]

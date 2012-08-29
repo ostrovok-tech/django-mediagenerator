@@ -53,11 +53,11 @@ class CssImport(FileFilter):
             for quote, include in self.IMPORT.findall(content):
                 fname = include.strip(' \n\t')
                 pool.append(fname)
-                fname = find_file(fname)
-                if not fname:
-                    return None
-
-                files[fname] = os.path.getmtime(fname)
+            
+            fname = find_file(item)
+            if not fname:
+                return None
+            files[fname] = os.path.getmtime(fname)
 
         return files
 

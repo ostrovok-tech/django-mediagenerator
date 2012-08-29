@@ -78,13 +78,14 @@ class JSTFilter(FileFilter):
             for include in self.include.findall(content):
                 fname = include.strip(' \n\t')
                 pool.append(fname)
-                fname = find_file(fname)
-                if not fname:
-                    return None
+            
+            fname = find_file(item)
+            if not fname:
+                return None
+            lm = os.path.getmtime(fname)
+            if lm > last_modified:
+                last_modified = lm
 
-                lm = os.path.getmtime(fname)
-                if lm > last_modified:
-                    last_modified = lm
         return last_modified
                 
 
