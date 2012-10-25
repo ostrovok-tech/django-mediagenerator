@@ -221,8 +221,6 @@ class SpriteBuilder(object):
             tmpfilename = "../%s.png" % self.collection
             cmd.append(tmpfilename)
         
-        print "Call cmd", " ".join(cmd)
-
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         procout, procerr = proc.communicate()
         if proc.returncode != 0:
