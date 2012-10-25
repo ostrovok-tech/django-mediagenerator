@@ -6,12 +6,15 @@ import shutil
 import subprocess
 
 from django.utils.encoding import smart_str
+from django.conf import settings as django_settings
 
 import mediagenerator.settings as settings
 from mediagenerator import utils
 from mediagenerator.generators.bundles.base import Filter, FileFilter
 from mediagenerator.utils import get_media_dirs
 from mediagenerator.settings import GENERATED_MEDIA_DIR
+
+SPRITE_PADDING = getattr(django_settings, 'MEDIA_SPRITE_PADDING', 0)
 
 def _find_root(name):
     for root in get_media_dirs():
@@ -71,7 +74,9 @@ class ImgInfo(object):
 
     def calc_offset(self, img=None):
         if img:
-            self.offset = 0, img.offset[1] - img.size[1]
+            self.offset = -1 * SPRITE_PADDING, img.offset[1] - (img.size[1] + 2*SPRITE_PADDING)
+        else:
+            self.offset = -1 * SPRITE_PADDING, -1 * SPRITE_PADDING
 
         
         
@@ -106,7 +111,8 @@ class SpriteBuilder(object):
         for i in self.images:
             w, h = i.size
             bg_w = max(bg_w, w)
-            bg_h += h
+            bg_h += h + 2*SPRITE_PADDING
+        bg_w = bg_w + SPRITE_PADDING
         self.bgimg_info = ImgInfo(self.generated_filename, (bg_w, bg_h))
 
     def handle_sprite(self, img, with_headers=True, bgimage=False, scale=1.0):
@@ -200,15 +206,22 @@ class SpriteBuilder(object):
         generated_filename = ""
         return_path = os.path.abspath(".")
         os.chdir(os.path.join(self.root))
+        cmd = [
+            "convert", 
+            "-identify", 
+            "-background", "Transparent", 
+            "-border", str(SPRITE_PADDING), 
+            "-bordercolor", "Transparent",
+            "-append",
+            "*.png", 
+        ]
         if self.debug:
-            # Use convert instead identify here becouse identify throws 
-            # errors on older ImageMagic version (no errors found on ubuntu 11.10).
-            # *cmd* called once per folder so there is shouldn't be lot of 
-            # performance lost in dev mode
-            cmd = ["convert", "-identify", "-strip", "-append", "*.png", "/dev/null" ]
+            cmd.append("/dev/null")
         else:
             tmpfilename = "../%s.png" % self.collection
-            cmd = ["convert", "-identify", "-strip", "-append", "*.png", tmpfilename ]
+            cmd.append(tmpfilename)
+        
+        print "Call cmd", " ".join(cmd)
 
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         procout, procerr = proc.communicate()
