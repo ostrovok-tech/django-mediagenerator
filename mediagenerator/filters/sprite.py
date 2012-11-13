@@ -1,5 +1,6 @@
 import hashlib
 import math
+import json
 import os
 import re
 import shutil
@@ -13,8 +14,6 @@ from mediagenerator import utils
 from mediagenerator.generators.bundles.base import Filter, FileFilter
 from mediagenerator.utils import get_media_dirs
 from mediagenerator.settings import GENERATED_MEDIA_DIR
-
-SPRITE_PADDING = getattr(django_settings, 'MEDIA_SPRITE_PADDING', 0)
 
 def _find_root(name):
     for root in get_media_dirs():
@@ -57,7 +56,7 @@ class ImgInfo(object):
     IMG_INFO_RE = re.compile("^(.+?)(\[\d+\])? PNG (\d+x\d+)")
 
     @classmethod
-    def from_string(cls, info):
+    def from_string(cls, info, padding):
         m = cls.IMG_INFO_RE.match(info)
         if not m: 
             return False
@@ -65,18 +64,19 @@ class ImgInfo(object):
         name = m.group(1)
         size = m.group(3).split("x")
         size = int(size[0]), int(size[1])
-        return cls(name, size)
+        return cls(name, size, padding)
 
-    def __init__(self, name, size):
+    def __init__(self, name, size, padding=0):
         self.name = name
         self.size = size
         self.offset = 0, 0
+        self.padding = padding
 
     def calc_offset(self, img=None):
         if img:
-            self.offset = -1 * SPRITE_PADDING, img.offset[1] - (img.size[1] + 2*SPRITE_PADDING)
+            self.offset = -1 * self.padding, img.offset[1] - (img.size[1] + 2*self.padding)
         else:
-            self.offset = -1 * SPRITE_PADDING, -1 * SPRITE_PADDING
+            self.offset = -1 * self.padding, -1 * self.padding
 
         
         
@@ -110,9 +110,8 @@ class SpriteBuilder(object):
         bg_h = 0
         for i in self.images:
             w, h = i.size
-            bg_w = max(bg_w, w)
-            bg_h += h + 2*SPRITE_PADDING
-        bg_w = bg_w + SPRITE_PADDING
+            bg_w = max(bg_w, 2*i.padding + w)
+            bg_h += h + 2*i.padding
         self.bgimg_info = ImgInfo(self.generated_filename, (bg_w, bg_h))
 
     def handle_sprite(self, img, with_headers=True, bgimage=False, scale=1.0):
@@ -206,11 +205,17 @@ class SpriteBuilder(object):
         generated_filename = ""
         return_path = os.path.abspath(".")
         os.chdir(os.path.join(self.root))
+
+        try:
+            padding = int(json.load(open('.config.json'))['padding'])
+        except (IOError, KeyError):
+            padding = getattr(django_settings, 'MEDIA_SPRITE_PADDING', 0)
+
         cmd = [
             "convert", 
             "-identify", 
             "-background", "Transparent", 
-            "-border", str(SPRITE_PADDING), 
+            "-border", str(padding), 
             "-bordercolor", "Transparent",
             "-append",
             "*.png", 
@@ -244,7 +249,7 @@ class SpriteBuilder(object):
         last_img = None
         result = []
         for imginfo in procout.split("\n"):
-            img = ImgInfo.from_string(imginfo)
+            img = ImgInfo.from_string(imginfo, padding)
             if img:
                 img.calc_offset(last_img)
                 last_img = img
