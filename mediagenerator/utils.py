@@ -11,6 +11,7 @@ from django.utils.importlib import import_module
 from django.utils.http import urlquote
 import os
 import re
+import threading
 
 try:
     NAMES = import_module(GENERATED_MEDIA_NAMES_MODULE).NAMES
@@ -35,6 +36,7 @@ _media_dirs_cache = []
 _generators_cache = []
 _generated_names = {}
 _backend_mapping = {}
+_refresh_lock = threading.Lock()
 
 def _load_generators():
     if not _generators_cache:
@@ -44,16 +46,20 @@ def _load_generators():
     return _generators_cache
 
 def _refresh_dev_names():
-    _generated_names.clear()
-    _backend_mapping.clear()
-    for backend in _load_generators():
-        for key, url, hash in backend.get_dev_output_names():
-            versioned_url = urlquote(url)
-            if hash:
-                versioned_url += '?version=' + hash
-            _generated_names.setdefault(key, [])
-            _generated_names[key].append(versioned_url)
-            _backend_mapping[url] = backend
+    try:
+        _refresh_lock.acquire()
+        _generated_names.clear()
+        _backend_mapping.clear()
+        for backend in _load_generators():
+            for key, url, hash in backend.get_dev_output_names():
+                versioned_url = urlquote(url)
+                if hash:
+                    versioned_url += '?version=' + hash
+                _generated_names.setdefault(key, [])
+                _generated_names[key].append(versioned_url)
+                _backend_mapping[url] = backend
+    finally:
+        _refresh_lock.release()
 
 class _MatchNothing(object):
     def match(self, content):
