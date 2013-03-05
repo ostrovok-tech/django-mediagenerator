@@ -138,7 +138,7 @@ def find_file(name, media_dirs=None):
     if media_dirs is None:
         media_dirs = get_media_dirs()
     for root in media_dirs:
-        path = os.path.normpath(os.path.join(root, name))
+        path = os.path.join(root, name)
         if os.path.isfile(path):
             return path
 
