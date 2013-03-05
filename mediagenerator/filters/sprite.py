@@ -83,7 +83,6 @@ class ImgInfo(object):
         
 
 class SpriteBuilder(object):
-    CSS_NAME_RE = re.compile("\.png$|[^a-zA-z0-9\-_]")
     """
     Builds sprite and render css.
     In debug mode just collect info from images.
@@ -96,6 +95,7 @@ class SpriteBuilder(object):
             /home/username/djangoprogect/_generate_media/img/sprite/icons-XXXXXXXXXXXX.png
         self.images => info about found images
     """
+    CSS_NAME_RE = re.compile("\.png$|[^a-zA-z0-9\-_]")
     tmpfiles = []
     def __init__(self, name):
         self.css = []
