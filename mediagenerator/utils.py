@@ -192,7 +192,7 @@ def _get_dev_media_bundles_blocks(refresh_names=True):
     provider.default.set_data(blocks_bundles.values())
     if refresh_names:
         _refresh_dev_names()
-    return blocks_files, blocks_bundles;
+    return blocks_files, blocks_bundles
 
 def _walk_tmpl(conf, dirname, names):
     tmpl_dir, blocks_bundles, blocks_files = conf
