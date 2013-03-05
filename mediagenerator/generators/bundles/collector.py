@@ -5,20 +5,20 @@ import hashlib
 import cPickle
 
 
-
 from .settings import (MEDIA_RELATIVE_RESOLVE, MEDIA_CSS_LOCATION,
-    MEDIA_JS_LOCATION, MEDIA_CSS_EXT, MEDIA_JS_EXT, MEDIA_CACHE_DIR )
+                       MEDIA_JS_LOCATION, MEDIA_CSS_EXT, MEDIA_JS_EXT, MEDIA_CACHE_DIR)
 
 from django.conf import settings
 
-#from mediagenerator import settings
 from mediagenerator.utils import find_file, get_media_dirs, atomic_store
 from mediagenerator.templatetags.media import MetaNode
 from django import template
 
+
 class CommentResolver(object):
-    resolve_re = re.compile(r"@require (?P<d>['\"])(.*?)(?P=d)", re.M|re.U)
+    resolve_re = re.compile(r"@require (?P<d>['\"])(.*?)(?P=d)", re.M | re.U)
     _cache = {}
+
     def __init__(self, lang):
         self.lang = lang
         self.comment_start = False
@@ -29,12 +29,12 @@ class CommentResolver(object):
         if fname in self._cache:
             result, time = self._cache[fname]
             mtime = os.path.getmtime(fname)
-            if time == mtime: 
+            if time == mtime:
                 return result
 
         with open(fname) as sf:
             content = sf.read()
-         
+
         # for testing purposes
         if MEDIA_RELATIVE_RESOLVE:
             result = []
@@ -45,14 +45,16 @@ class CommentResolver(object):
 
         time = os.path.getmtime(fname)
         self._cache[fname] = result, time
-    
+
         return result
 
     def _resolve(self, source):
-        return [ m.group(2) for m in self.resolve_re.finditer(source) ]
+        return [m.group(2) for m in self.resolve_re.finditer(source)]
+
 
 class MediaBlock(object):
     re_js_req = re.compile('//@require (.*)', re.UNICODE)
+
     def __init__(self, block, uniques):
         self.bundle_entries = [re.sub('\.html', "", b) for b in block]
         self.uniques = uniques
@@ -74,8 +76,9 @@ class MediaBlock(object):
                     if found not in entries:
                         bundle.append(found)
                     entries.add(found)
-                    
-            if len(bundle) == 1: continue
+
+            if len(bundle) == 1:
+                continue
             res.append(bundle)
 
         # make ie bundles here
@@ -95,15 +98,13 @@ class MediaBlock(object):
                 else:
                     norm_bundle.append(entry)
 
-
             if len(norm_bundle) > 1:
                 ie_res.append(norm_bundle)
-            
+
             if len(ie_bundle) > 1:
                 ie_res.append(ie_bundle)
 
         return ie_res
-
 
     def _find_js(self, name):
         result = []
@@ -122,7 +123,7 @@ class MediaBlock(object):
                     break
 
         return result
-    
+
     def _find_css(self, name):
         result = []
         for ext in MEDIA_CSS_EXT:
@@ -141,7 +142,6 @@ class MediaBlock(object):
 
         return result
 
-
     def _find_deps(self, name, lang):
         resolver = CommentResolver(lang)
         deps = []
@@ -155,8 +155,10 @@ class MediaBlock(object):
 
         return deps
 
+
 class TmplFileCache(object):
     location = MEDIA_CACHE_DIR
+
     def __init__(self, tmpl_name):
         self.tmpl_name = tmpl_name
         self.cache_fname = None
@@ -168,7 +170,7 @@ class TmplFileCache(object):
     def check_result(self):
         tmpl_name = self.tmpl_name
         cache_fname = self.cache_fname = os.path.join(self.location, tmpl_name)
-        
+
         tmpl_file = self.resolve_tmpl_file_name(tmpl_name)
 
         if not tmpl_file:
@@ -179,8 +181,6 @@ class TmplFileCache(object):
 
         with open(cache_fname, "r") as sf:
             info = cPickle.load(sf)
-
-
 
         if info["hash"] == self.get_hash(info["tmpls"]):
             return info["result"], True
@@ -195,8 +195,8 @@ class TmplFileCache(object):
         atomic_store(
             self.cache_fname,
             cPickle.dumps({
-                "hash" : self.get_hash(tmpls),
-                "result" : result,
+                "hash": self.get_hash(tmpls),
+                "result": result,
                 "tmpls": sorted(set(tmpls))
             })
         )
@@ -208,14 +208,13 @@ class TmplFileCache(object):
                 return check_file
 
         return None
-        
 
     def get_hash(self, tmpls):
         if self.md5:
             return self.md5
 
         src = "version_3"
-        
+
         for tmpl_name in sorted(set(tmpls)):
             tmpl_file = self.resolve_tmpl_file_name(tmpl_name)
             if not tmpl_file:
@@ -228,9 +227,10 @@ class TmplFileCache(object):
 
         self.md5 = hashlib.md5(src).digest()
         return self.md5
-        
+
+
 class Collector(object):
-        
+
     __resources__ = {}
 
     def __init__(self):
@@ -239,9 +239,8 @@ class Collector(object):
         self.meta_found = False
         self.root_name = None
 
-
     def find_bundles(self, tmpl_name):
-        
+
         collection = self._find_collection(tmpl_name)
         if not len(collection):
             return False, []
@@ -251,7 +250,7 @@ class Collector(object):
         uniques = set()
         for b in collection:
             res += MediaBlock(b, uniques).get_bundles()
-        
+
         self.normilize_names(res)
 
         return True, res
@@ -300,7 +299,7 @@ class Collector(object):
             while len(pool):
                 r = pool.pop(0)
                 if not r.is_exists():
-                    print "Warning: Resource does not exists: %s. From file: %s" % ( r.name, resource.get_abs_path() )
+                    print "Warning: Resource does not exists: %s. From file: %s" % (r.name, resource.get_abs_path())
                     continue
 
                 parser.parse(r.get_content())
@@ -327,10 +326,8 @@ class Collector(object):
                     elem.append(include_res.name)
                     resource.add_dep(include_res)
 
-
-
         return collection
-    
+
     def _find_blocks(self, tmpl):
         tmpl_name = tmpl
         try:
@@ -339,8 +336,6 @@ class Collector(object):
             print "Warning: Unable to parse template `%s`: %s" % (tmpl, repr(e))
             return False, [], []
 
-
-    
         self.root_name = tmpl.name
         self.pool = [[tmpl.name]]
         self.blocks = [self.pool[0]]
@@ -359,25 +354,21 @@ class Collector(object):
 
         return meta_found, blocks, tmpls
 
-
-
     def normilize_names(self, blocks):
         for block in blocks:
             block[0] = block[0].replace("/", "-")
-
-
 
     def event(self, arg):
         if isinstance(arg, template.loader_tags.ExtendsNode):
             if not arg.parent_name:
                 raise Exception("Only static extend suported")
-            
+
             try:
                 tmpl = template.loader.get_template(arg.parent_name)
                 self.tmpls.append(tmpl.name)
                 for node in arg.nodelist:
                     self.event(node)
-                
+
                 extend = [arg.parent_name]
                 self.blocks.append(extend)
                 self.pool.append(extend)
@@ -387,10 +378,10 @@ class Collector(object):
 
             except template.base.TemplateDoesNotExist, e:
                 print "Warning: Block `%s` will not fully processed: %s" % (arg.parent_name, repr(e))
-            
+
         elif isinstance(arg, template.loader_tags.BlockNode):
-           for node in arg.nodelist:
-               self.event(node)
+            for node in arg.nodelist:
+                self.event(node)
         elif isinstance(arg, template.loader_tags.IncludeNode):
             print "Warning: Block `%s` will not fully processed: only static include supported" % self.root_name
         elif isinstance(arg, template.loader_tags.ConstantIncludeNode):
@@ -416,14 +407,15 @@ class Collector(object):
         elif isinstance(arg, MetaNode):
             self.meta_found = True
 
+
 def _find_files(path_from, pattern):
-    
+
     path_root = os.path.abspath(".")
 
     if pattern.startswith("."):
         search_prefix = path_from.replace(path_root, "").strip("/")
         pattern = search_prefix + "/" + pattern
-    
+
     found = []
     for cdir in get_media_dirs():
         if not os.path.isdir(cdir):
@@ -435,8 +427,8 @@ def _find_files(path_from, pattern):
             break
 
     return [os.path.normpath(f) for f in found]
-    
-        
+
+
 class Resource(object):
     class DoesNotExists(Exception):
         pass
@@ -446,7 +438,7 @@ class Resource(object):
     def __init__(self, name):
         self.name = name
         self.filters = []
-        self.deps    = []
+        self.deps = []
 
     def is_exists(self):
         #return bool(self.manager.locator.find_root_location(self.name))
@@ -472,7 +464,7 @@ class Resource(object):
 
     def get_cache_key(self):
         return self.resource_type + "/" + self.name
-         
+
     def get_abs_path(self):
         if not self.get_root_location():
             raise self.DoesNotExists(self.name)
@@ -481,7 +473,7 @@ class Resource(object):
 
     def get_extention(self):
         try:
-            return self.name.rsplit(".", 1)[1] 
+            return self.name.rsplit(".", 1)[1]
         except IndexError:
             return ""
 
@@ -490,9 +482,9 @@ class Resource(object):
             return os.path.getmtime(self.get_abs_path())
         else:
             return hashlib.md5(self.get_content()).hexdigest()
-    
+
     def get_filtered_content(self):
-        
+
         is_cached, content = self.get_cached()
         if is_cached:
             return content
@@ -560,23 +552,25 @@ class Resource(object):
             else:
                 version_mod = None
                 version_hash = False
-            deps.append((r.resource_type, r.name, r.is_exists(), version_mod, version_hash))
+            deps.append((r.resource_type, r.name, r.is_exists(
+            ), version_mod, version_hash))
 
         data = {
             "filters": [f.name for f in self.filters],
             "version": [self.get_version("mod"), self.get_version("hash")],
             "content": content,
-            "deps"   : deps
+            "deps": deps
         }
         self.manager.cache.set(self.get_cache_key(), data)
 
     def __repr__(self):
-        return "<%s: '%s'>" % ( self.__class__.__name__, self.name )
+        return "<%s: '%s'>" % (self.__class__.__name__, self.name)
 
 
 class TemplateParser(object):
-    
-    re_tags = re.compile(r'{%\s*(comment|endcomment|extends|include|media_meta)\s*(.*?)\s*%}')
+
+    re_tags = re.compile(
+        r'{%\s*(comment|endcomment|extends|include|media_meta)\s*(.*?)\s*%}')
     re_tmplname = re.compile(r"(?P<d>['\"])(.*?)(?P=d)")
 
     def parse(self, content):
