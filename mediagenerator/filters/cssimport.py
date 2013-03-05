@@ -42,7 +42,6 @@ class CssImport(FileFilter):
     def _collect_scss_files(self):
         files = {}
         pool = [self.name]
-        last_modified = 0
         while len(pool):
             item = pool.pop(0)
             try:
