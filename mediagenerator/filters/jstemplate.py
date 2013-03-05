@@ -19,7 +19,7 @@ class JSTFilter(FileFilter):
         return code.replace("\\\\", "\\").replace("\\'", "'")
 
     def compile_tmpl(self, plain, name):
-        tmpl     = "MEDIA = window.MEDIA || {};";
+        tmpl     = "MEDIA = window.MEDIA || {};"
         tmpl    += "MEDIA.templates = MEDIA.templates || {};"
         tmpl    += "MEDIA.templates['%s'] = { render: function(obj){" % name
         tmpl    += "var __p=[];"
@@ -45,7 +45,7 @@ class JSTFilter(FileFilter):
             plain = plain.replace("\n", "\\n")
             plain = plain.replace("\r", "\\r")
 
-        footer  = "');}return __p.join('');}};";
+        footer  = "');}return __p.join('');}};"
 
         
         return tmpl + plain + footer
