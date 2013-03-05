@@ -1,7 +1,7 @@
 from . import settings as media_settings
 from .settings import (GLOBAL_MEDIA_DIRS, PRODUCTION_MEDIA_URL,
-    IGNORE_APP_MEDIA_DIRS, MEDIA_GENERATORS, DEV_MEDIA_URL,
-    GENERATED_MEDIA_NAMES_MODULE, GENERATED_MEDIA_BLOCKS_MODULE,)
+                       IGNORE_APP_MEDIA_DIRS, MEDIA_GENERATORS, DEV_MEDIA_URL,
+                       GENERATED_MEDIA_NAMES_MODULE, GENERATED_MEDIA_BLOCKS_MODULE,)
 
 
 from django import template
@@ -20,8 +20,8 @@ except (ImportError, AttributeError):
 
 try:
     _media_blocks = import_module(GENERATED_MEDIA_BLOCKS_MODULE)
-    MEDIA_BLOCKS_FILES      = _media_blocks.MEDIA_BLOCKS_FILES
-    MEDIA_BLOCKS_BUNDLES    = _media_blocks.MEDIA_BLOCKS_BUNDLES
+    MEDIA_BLOCKS_FILES = _media_blocks.MEDIA_BLOCKS_FILES
+    MEDIA_BLOCKS_BUNDLES = _media_blocks.MEDIA_BLOCKS_BUNDLES
     if media_settings.MEDIA_DEV_MODE:
         from mediagenerator.generators.bundles import provider
         provider.default.set_data(MEDIA_BLOCKS_BUNDLES.values())
@@ -38,12 +38,14 @@ _generated_names = {}
 _backend_mapping = {}
 _refresh_lock = threading.Lock()
 
+
 def _load_generators():
     if not _generators_cache:
         for name in MEDIA_GENERATORS:
             backend = load_backend(name)()
             _generators_cache.append(backend)
     return _generators_cache
+
 
 def _refresh_dev_names():
     try:
@@ -61,9 +63,11 @@ def _refresh_dev_names():
     finally:
         _refresh_lock.release()
 
+
 class _MatchNothing(object):
     def match(self, content):
         return False
+
 
 def prepare_patterns(patterns, setting_name):
     """Helper function for patter-matching settings."""
@@ -81,6 +85,7 @@ def prepare_patterns(patterns, setting_name):
     # Now return a combined pattern
     return re.compile('^(' + ')$|^('.join(patterns) + ')$', re.U)
 
+
 def get_production_mapping():
     if NAMES is None:
         raise ImportError('Could not import %s. This '
@@ -89,10 +94,12 @@ def get_production_mapping():
                           % GENERATED_MEDIA_NAMES_MODULE)
     return NAMES
 
+
 def get_media_mapping():
     if media_settings.MEDIA_DEV_MODE:
         return _generated_names
     return get_production_mapping()
+
 
 def get_media_url_mapping():
     if media_settings.MEDIA_DEV_MODE:
@@ -108,6 +115,7 @@ def get_media_url_mapping():
 
     return mapping
 
+
 def media_urls(key, refresh=False):
     if media_settings.MEDIA_DEV_MODE:
         if refresh:
@@ -115,12 +123,14 @@ def media_urls(key, refresh=False):
         return [DEV_MEDIA_URL + url for url in _generated_names[key]]
     return [PRODUCTION_MEDIA_URL + get_production_mapping()[key]]
 
+
 def media_url(key, refresh=False):
     urls = media_urls(key, refresh=refresh)
     if len(urls) == 1:
         return urls[0]
     raise ValueError('media_url() only works with URLs that contain exactly '
-        'one file. Use media_urls() (or {% include_media %} in templates) instead.')
+                     'one file. Use media_urls() (or {% include_media %} in templates) instead.')
+
 
 def get_media_dirs():
     if not _media_dirs_cache:
@@ -134,6 +144,7 @@ def get_media_dirs():
         _media_dirs_cache.extend(media_dirs)
     return _media_dirs_cache
 
+
 def find_file(name, media_dirs=None):
     if media_dirs is None:
         media_dirs = get_media_dirs()
@@ -142,11 +153,13 @@ def find_file(name, media_dirs=None):
         if os.path.isfile(path):
             return path
 
+
 def read_text_file(path):
     fp = open(path, 'r')
     output = fp.read()
     fp.close()
     return output.decode('utf8')
+
 
 def load_backend(backend):
     if backend not in _backends_cache:
@@ -154,21 +167,24 @@ def load_backend(backend):
         _backends_cache[backend] = _load_backend(backend)
     return _backends_cache[backend]
 
+
 def _load_backend(path):
     module_name, attr_name = path.rsplit('.', 1)
     try:
         mod = import_module(module_name)
     except (ImportError, ValueError), e:
-        raise ImproperlyConfigured('Error importing backend module %s: "%s"' % (module_name, e))
+        raise ImproperlyConfigured(
+            'Error importing backend module %s: "%s"' % (module_name, e))
     try:
         return getattr(mod, attr_name)
     except AttributeError:
         raise ImproperlyConfigured('Module "%s" does not define a "%s" backend' % (module_name, attr_name))
 
+
 def get_media_bundles_names(block_name):
     if media_settings.MEDIA_DEV_MODE:
         provider = import_module("mediagenerator.generators.bundles.provider")
-        bundles =_get_block_bundles(block_name)
+        bundles = _get_block_bundles(block_name)
         provider.default.set_data(bundles)
         _refresh_dev_names()
         return [b[0] for b in bundles]
@@ -176,23 +192,26 @@ def get_media_bundles_names(block_name):
         files, bundles = get_media_bundles_blocks()
         return files[block_name]
 
+
 def get_media_bundles_blocks():
     if media_settings.MEDIA_DEV_MODE:
         return _get_dev_media_bundles_blocks()
     else:
         return MEDIA_BLOCKS_FILES, MEDIA_BLOCKS_BUNDLES
 
+
 def _get_dev_media_bundles_blocks(refresh_names=True):
     blocks_files = {}
     blocks_bundles = {}
     for path in settings.TEMPLATE_DIRS:
         os.path.walk(path, _walk_tmpl, (path, blocks_bundles, blocks_files))
-    
+
     provider = import_module("mediagenerator.generators.bundles.provider")
     provider.default.set_data(blocks_bundles.values())
     if refresh_names:
         _refresh_dev_names()
     return blocks_files, blocks_bundles
+
 
 def _walk_tmpl(conf, dirname, names):
     tmpl_dir, blocks_bundles, blocks_files = conf
@@ -212,9 +231,11 @@ def _walk_tmpl(conf, dirname, names):
             for b in bundles:
                 bname = b[0]
                 if bname in blocks_bundles and blocks_bundles[bname] != b:
-                    raise Exception("Different bundles with same name: `%s`" % bname)
+                    raise Exception(
+                        "Different bundles with same name: `%s`" % bname)
 
                 blocks_bundles[bname] = b
+
 
 def _get_block_bundles(block_name):
     from mediagenerator.generators.bundles.collector import collector
@@ -223,6 +244,7 @@ def _get_block_bundles(block_name):
         return bundles
     else:
         return []
+
 
 def atomic_store(path, content):
     tmp = path + '.' + str(os.getpid())
