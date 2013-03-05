@@ -4,8 +4,8 @@ from .settings import (GLOBAL_MEDIA_DIRS, PRODUCTION_MEDIA_URL,
                        GENERATED_MEDIA_NAMES_MODULE, GENERATED_MEDIA_BLOCKS_MODULE,)
 
 
-from django import template
 from django.conf import settings
+from django.core.cache import get_cache, InvalidCacheBackendError
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.importlib import import_module
 from django.utils.http import urlquote
@@ -250,3 +250,21 @@ def atomic_store(path, content):
     tmp = path + '.' + str(os.getpid())
     open(tmp, 'w').write(content)
     os.rename(tmp, path)
+
+
+try:
+    _persistent_cache = get_cache('mediagenerator')
+
+    def cache_get(key):
+        return _persistent_cache.get(key)
+
+    def cache_set(key, value):
+        print "cache miss for", key
+        _persistent_cache.set(key, value, timeout=28*24*3600)
+
+except InvalidCacheBackendError:
+    def cache_get(key):
+        return None
+
+    def cache_set(key, value):
+        pass
