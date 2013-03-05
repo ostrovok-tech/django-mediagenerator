@@ -212,7 +212,7 @@ def _walk_tmpl(conf, dirname, names):
             for b in bundles:
                 bname = b[0]
                 if bname in blocks_bundles and blocks_bundles[bname] != b:
-                    raise Exception("Different bundles wigh same name: `%s`" % bname)
+                    raise Exception("Different bundles with same name: `%s`" % bname)
 
                 blocks_bundles[bname] = b
 
