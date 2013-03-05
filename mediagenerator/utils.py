@@ -37,6 +37,7 @@ _generators_cache = []
 _generated_names = {}
 _backend_mapping = {}
 _refresh_lock = threading.Lock()
+_find_file_cache = {}
 
 
 def _load_generators():
@@ -148,10 +149,16 @@ def get_media_dirs():
 def find_file(name, media_dirs=None):
     if media_dirs is None:
         media_dirs = get_media_dirs()
+        if name in _find_file_cache:
+            return _find_file_cache[name]
+
     for root in media_dirs:
         path = os.path.join(root, name)
-        if os.path.isfile(path):
+        if os.path.exists(path):
+            if media_dirs is None:
+                _find_file_cache[name] = path
             return path
+    _find_file_cache[name] = None
 
 
 def read_text_file(path):
