@@ -188,7 +188,17 @@ def _load_backend(path):
         raise ImproperlyConfigured('Module "%s" does not define a "%s" backend' % (module_name, attr_name))
 
 
-def get_media_bundles_names(block_name):
+def get_media_bundles_names(block_names):
+    if isinstance(block_names, (list, tuple)):
+        result = []
+        for block_name in block_names:
+            result += list(_get_media_bundles_names(block_name))
+        return result
+    else:
+        return _get_media_bundles_names(block_names)
+
+
+def _get_media_bundles_names(block_name):
     if media_settings.MEDIA_DEV_MODE:
         provider = import_module("mediagenerator.generators.bundles.provider")
         bundles = _get_block_bundles(block_name)
