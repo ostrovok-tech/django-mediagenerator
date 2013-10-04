@@ -48,15 +48,13 @@ def _load_generators():
 def _refresh_dev_names():
     try:
         _refresh_lock.acquire()
-        _generated_names.clear()
-        _backend_mapping.clear()
         for backend in _load_generators():
             for key, url, hash in backend.get_dev_output_names():
                 versioned_url = urlquote(url)
                 if hash:
                     versioned_url += '?version=' + hash
-                _generated_names.setdefault(key, [])
-                _generated_names[key].append(versioned_url)
+                _generated_names.setdefault(key, set())
+                _generated_names[key].add(versioned_url)
                 _backend_mapping[url] = backend
     finally:
         _refresh_lock.release()
