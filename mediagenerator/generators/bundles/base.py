@@ -165,9 +165,7 @@ class FileFilter(Filter):
         yield self.get_dev_output(self.name, variation)
 
     def get_dev_output(self, name, variation):
-        assert name == self.name, (
-            '''File name "%s" doesn't match the one in GENERATE_MEDIA ("%s")'''
-            % (name, self.name))
+        self.name = name
         return read_text_file(self._get_path())
 
     def get_last_modified(self):
