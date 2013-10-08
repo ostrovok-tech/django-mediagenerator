@@ -53,8 +53,9 @@ def _refresh_dev_names():
                 versioned_url = urlquote(url)
                 if hash:
                     versioned_url += '?version=' + hash
-                _generated_names.setdefault(key, set())
-                _generated_names[key].add(versioned_url)
+                _generated_names.setdefault(key, [])
+                if versioned_url not in _generated_names[key]:
+                    _generated_names[key].append(versioned_url)
                 _backend_mapping[url] = backend
     finally:
         _refresh_lock.release()
