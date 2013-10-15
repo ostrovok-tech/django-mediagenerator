@@ -168,7 +168,7 @@ def get_media_bundles_names(block_name):
     if media_settings.MEDIA_DEV_MODE:
         provider = import_module("mediagenerator.generators.bundles.provider")
         bundles =_get_block_bundles(block_name)
-        provider.default.set_data(bundles)
+        provider.default.update(bundles)
         _refresh_dev_names()
         return [b[0] for b in bundles]
     else:

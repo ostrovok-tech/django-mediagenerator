@@ -8,6 +8,15 @@ class Provider(object):
     def set_data(self, data):
         self.p = data
 
+    def update(self, bundles):
+        for bundle in bundles:
+            bundle_name = bundle[0]
+            for existed_bundle in self.p:
+                if existed_bundle[0] == bundle_name:
+                    break
+            else:
+                self.p.append(bundle)
+
     def __iter__(self):
         for b in self.default:
             yield b

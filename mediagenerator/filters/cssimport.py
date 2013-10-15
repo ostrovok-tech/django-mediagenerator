@@ -9,7 +9,6 @@ class CssImport(FileFilter):
     
     IMPORT = re.compile(r"@import \s*(?P<d>['\"])(.*?)(?P=d)\s*;", re.M|re.U)
     COMMENT = re.compile(r"/\*.*?\*/")
-    LINE_COMMENT = re.compile("//.*?\n")
 
     def __init__(self, **kwargs):
         super(CssImport, self).__init__(**kwargs)
@@ -25,7 +24,6 @@ class CssImport(FileFilter):
 
         while self.IMPORT.search(content):
             content = self.COMMENT.sub("", content)
-            content = self.LINE_COMMENT.sub("", content)
             content = self.IMPORT.sub(lambda m: self._read_import(m.group(2)), content)
         
         
