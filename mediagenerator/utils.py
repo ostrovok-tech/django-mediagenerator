@@ -7,11 +7,13 @@ from .settings import (GLOBAL_MEDIA_DIRS, PRODUCTION_MEDIA_URL,
 from django import template
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.template import loader
 from django.utils.importlib import import_module
 from django.utils.http import urlquote
 import os
 import re
 import threading
+import six
 
 try:
     NAMES = import_module(GENERATED_MEDIA_NAMES_MODULE).NAMES
@@ -164,16 +166,23 @@ def _load_backend(path):
     except AttributeError:
         raise ImproperlyConfigured('Module "%s" does not define a "%s" backend' % (module_name, attr_name))
 
-def get_media_bundles_names(block_name):
+def get_media_bundles_names(template):
+    if isinstance(template, (list, tuple)):
+        template = loader.select_template(template).name
+    elif isinstance(template, six.string_types):
+        pass
+    else:
+        template = template.name
+
     if media_settings.MEDIA_DEV_MODE:
         provider = import_module("mediagenerator.generators.bundles.provider")
-        bundles =_get_block_bundles(block_name)
+        bundles =_get_block_bundles(template)
         provider.default.update(bundles)
         _refresh_dev_names()
         return [b[0] for b in bundles]
     else:
         files, bundles = get_media_bundles_blocks()
-        return files[block_name]
+        return files[template]
 
 def get_media_bundles_blocks():
     if media_settings.MEDIA_DEV_MODE:
