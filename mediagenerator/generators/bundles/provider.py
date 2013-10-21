@@ -6,16 +6,26 @@ class Provider(object):
         self.iterkey = -1
 
     def set_data(self, data):
-        self.p = data
+        self.p = []
+        self.update(data)
 
     def update(self, bundles):
         for bundle in bundles:
             bundle_name = bundle[0]
+            index = 0
+            found = False
             for existed_bundle in self.p:
                 if existed_bundle[0] == bundle_name:
+                    self.p[index] = bundle
+                    found = True
                     break
+                index += 1
             else:
                 self.p.append(bundle)
+            if found:
+                continue
+
+        print self.p
 
     def __iter__(self):
         for b in self.default:
