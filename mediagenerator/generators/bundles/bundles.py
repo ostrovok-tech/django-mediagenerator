@@ -20,7 +20,7 @@ class Bundles(Generator):
             print "   ", item[0]
         
         print "Bundles generated: "
-        for item in MEDIA_BUNDLES.p:
+        for item in MEDIA_BUNDLES.p.values():
             print "   ", item[0]
 
         print "Done"
