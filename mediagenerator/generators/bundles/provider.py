@@ -14,8 +14,6 @@ class Provider(object):
             self.p[bundle[0]] = bundle
             bundle_name = bundle[0]
 
-        print self.p
-
     def __iter__(self):
         for b in self.default:
             yield b

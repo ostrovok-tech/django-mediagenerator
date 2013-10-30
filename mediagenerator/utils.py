@@ -140,13 +140,47 @@ def get_media_dirs():
         _media_dirs_cache.extend(media_dirs)
     return _media_dirs_cache
 
-def find_file(name, media_dirs=None):
-    if media_dirs is None:
-        media_dirs = get_media_dirs()
-    for root in media_dirs:
-        path = os.path.normpath(os.path.join(root, name))
-        if os.path.isfile(path):
-            return path
+
+class FileFinder(object):
+    fileset = None
+    def __init__(self):
+        self.media_dirs = get_media_dirs()
+
+    def prepare_fileset(self):
+        if self.fileset is not None:
+            return
+        if media_settings.MEDIA_DEV_MODE:
+            return
+
+        self.fileset = {}
+        for dir in self.media_dirs:
+            for prefix, dirs, files in os.walk(dir, followlinks=True):
+                for file in files:
+                    fullname = os.path.join(prefix, file)
+                    shortname = fullname[len(dir):].lstrip('/')
+                    self.fileset[shortname] = os.path.abspath(fullname)
+
+    def __call__(self, name, media_dirs=None):
+        name = os.path.normpath(name)
+        if media_dirs:
+            return self.find_file(name, media_dirs)
+
+        if media_settings.MEDIA_DEV_MODE:
+            return self.find_file(name, self.media_dirs)
+
+        self.prepare_fileset()
+        if name in self.fileset:
+            return self.fileset[name]
+
+        return None
+
+    def find_file(self, name, media_dirs=None):
+        for root in media_dirs:
+            path = os.path.normpath(os.path.join(root, name))
+            if os.path.isfile(path):
+                return path
+
+find_file = FileFinder()
 
 def read_text_file(path):
     fp = open(path, 'r')
