@@ -165,7 +165,7 @@ class FileFinder(object):
         if media_dirs:
             return self.find_file(name, media_dirs)
 
-        if media_settings.MEDIA_DEV_MODE:
+        if media_settings.MEDIA_DEV_MODE or name.startswith('/'):
             return self.find_file(name, self.media_dirs)
 
         self.prepare_fileset()
