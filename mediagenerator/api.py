@@ -51,7 +51,7 @@ def prepare_media():
             sf.write("MEDIA_BLOCKS_FILES=" + repr(blocks_files) + "\n")
             sf.write("MEDIA_BLOCKS_BUNDLES=" + repr(blocks_bundles) + "\n")
 
-def analize_media():
+def analyze_media():
     entry_points = set(settings.MEDIA_TESTED_POINTS)
     blocks_files, blocks_bundles = _get_dev_media_bundles_blocks(refresh_names=False)
     for entry in blocks_files.keys():

@@ -1,4 +1,4 @@
-from ...api import analize_media
+from ...api import analyze_media
 from django.core.management.base import NoArgsCommand
 
 class Command(NoArgsCommand):
@@ -7,4 +7,4 @@ class Command(NoArgsCommand):
     requires_model_validation = False
 
     def handle_noargs(self, **options):
-        analize_media()
+        analyze_media()
