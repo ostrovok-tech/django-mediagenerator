@@ -8,7 +8,7 @@ import cPickle
 
 
 from .settings import (MEDIA_RELATIVE_RESOLVE, MEDIA_CSS_LOCATION,
-    MEDIA_JS_LOCATION, MEDIA_CSS_EXT, MEDIA_JS_EXT, MEDIA_CACHE_DIR )
+    MEDIA_JS_LOCATION, MEDIA_CSS_EXT, MEDIA_JS_EXT, MEDIA_CACHE_DIR, MEDIA_BLOCK_SIZE )
 from ...settings import  MEDIA_DEV_MODE
 
 from django.conf import settings
@@ -86,6 +86,8 @@ class MediaBlock(object):
             if len(bundle) == 1: continue
             res.append(bundle)
 
+        res = self.reduce_bundle_size(res)
+
         # make ie bundles here
         ie_res = []
         for bundle in res:
@@ -111,6 +113,23 @@ class MediaBlock(object):
                 ie_res.append(ie_bundle)
 
         return ie_res
+
+    def reduce_bundle_size(self, bundles):
+        res = []
+        for bundle in bundles:
+            if len(bundle) < MEDIA_BLOCK_SIZE:
+                res.append(bundle)
+                continue
+
+            bundle_name, bundle_ext = os.path.splitext(bundle.pop(0))
+            num_parts = len(bundle) / MEDIA_BLOCK_SIZE + 1
+            part_size = len(bundle) / num_parts + 1
+            for current_part in range(num_parts):
+                bundle_part_name = '{0}.part{1}{2}'.format(bundle_name, current_part, bundle_ext)
+                bundle_part = [bundle_part_name] + bundle[current_part*part_size:(current_part+1)*part_size]
+                res.append(bundle_part)
+        return res
+
 
 
     def _find_js(self, name):

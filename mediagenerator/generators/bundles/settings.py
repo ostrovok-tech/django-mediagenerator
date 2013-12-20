@@ -59,3 +59,7 @@ MEDIA_CSS_EXT = getattr(settings, "MEDIA_CSS_EXT", ('ie.css', 'css', 'scss'))
 MEDIA_JS_EXT = getattr(settings, "MEDIA_JS_EXT", ('js', 'jst', 'coffee'))
 MEDIA_RELATIVE_RESOLVE = getattr(settings, "MEDIA_RELATIVE_RESOLVE", False)
 MEDIA_CACHE_DIR = getattr(settings, 'MEDIA_CACHE_DIR', '/var/cache/django-mediacache')
+
+# maximum files in blocks
+# attemt to bypass IE limitation on 4k selectors per file
+MEDIA_BLOCK_SIZE = getattr(settings, 'MEDIA_BLOCK_SIZE', 100)
