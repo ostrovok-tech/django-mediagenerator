@@ -44,8 +44,11 @@ class MetaNode(template.Node):
     def render(self, context):
         if "__tmplname__" not in context:
             raise Exception("You can't use tag {% media_meta %} with `MEDIA_BLOCKS` option seted to False")
-
-        names = utils.get_media_bundles_names(context["__tmplname__"])
+        if isinstance(context["__tmplname__"], list):
+             block_name = context["__tmplname__"][0]
+        else:
+             block_name = context["__tmplname__"]
+        names = utils.get_media_bundles_names(block_name)
         if self.custom_meta:
             names = filter(lambda n: n.endswith("." + self.custom_meta), names)
 
